@@ -28,7 +28,7 @@ on:
         default: 'plan'
 
 env:
-  TF_VERSION: '1.6.0'
+  TF_VERSION: '1.9.0'
   AWS_REGION: 'us-east-1'
 
 jobs:
