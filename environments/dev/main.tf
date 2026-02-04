@@ -1,0 +1,258 @@
+# =============================================================================
+# Development Environment
+# =============================================================================
+# This is the main entry point for the dev environment.
+# It instantiates all modules with dev-specific configuration.
+# =============================================================================
+
+terraform {
+  required_version = ">= 1.5"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+
+  # Backend configuration - uncomment for remote state
+  # backend "s3" {
+  #   bucket         = "your-terraform-state-bucket"
+  #   key            = "dev/terraform.tfstate"
+  #   region         = "us-east-1"
+  #   encrypt        = true
+  #   dynamodb_table = "terraform-state-lock"
+  # }
+}
+
+# -----------------------------------------------------------------------------
+# Provider Configuration
+# -----------------------------------------------------------------------------
+
+provider "aws" {
+  region = local.primary_region
+
+  default_tags {
+    tags = {
+      Project     = var.project_name
+      Environment = var.environment
+      ManagedBy   = "terraform"
+    }
+  }
+}
+
+# LocalStack provider for local development
+provider "aws" {
+  alias  = "localstack"
+  region = local.primary_region
+
+  access_key                  = "test"
+  secret_key                  = "test"
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+
+  endpoints {
+    acm                    = var.localstack_endpoint
+    apigateway             = var.localstack_endpoint
+    cloudformation         = var.localstack_endpoint
+    cloudwatch             = var.localstack_endpoint
+    cloudwatchlogs         = var.localstack_endpoint
+    dynamodb               = var.localstack_endpoint
+    ec2                    = var.localstack_endpoint
+    ecr                    = var.localstack_endpoint
+    ecs                    = var.localstack_endpoint
+    elasticache            = var.localstack_endpoint
+    elasticloadbalancing   = var.localstack_endpoint
+    elasticloadbalancingv2 = var.localstack_endpoint
+    events                 = var.localstack_endpoint
+    globalaccelerator      = var.localstack_endpoint
+    iam                    = var.localstack_endpoint
+    kinesis                = var.localstack_endpoint
+    kms                    = var.localstack_endpoint
+    lambda                 = var.localstack_endpoint
+    rds                    = var.localstack_endpoint
+    route53                = var.localstack_endpoint
+    s3                     = var.localstack_endpoint
+    secretsmanager         = var.localstack_endpoint
+    ses                    = var.localstack_endpoint
+    sns                    = var.localstack_endpoint
+    sqs                    = var.localstack_endpoint
+    ssm                    = var.localstack_endpoint
+    stepfunctions          = var.localstack_endpoint
+    sts                    = var.localstack_endpoint
+  }
+
+  default_tags {
+    tags = {
+      Project     = var.project_name
+      Environment = var.environment
+      ManagedBy   = "terraform"
+    }
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Local Variables
+# -----------------------------------------------------------------------------
+
+locals {
+  primary_region = "us-east-1"
+
+  # Filter enabled regions
+  enabled_regions = {
+    for key, region in var.regions : key => region
+    if region.enabled
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Global Module
+# -----------------------------------------------------------------------------
+
+module "global" {
+  source = "../../modules/global"
+
+  providers = {
+    aws = var.use_localstack ? aws.localstack : aws
+  }
+
+  project_name              = var.project_name
+  environment               = var.environment
+  domain_name               = var.domain_name
+  create_hosted_zone        = var.create_hosted_zone
+  existing_hosted_zone_id   = var.existing_hosted_zone_id
+  regions                   = var.regions
+  enable_global_accelerator = var.enable_global_accelerator
+  ecr_repositories          = var.ecr_repositories
+
+  tags = var.tags
+}
+
+# -----------------------------------------------------------------------------
+# Region Modules (one per enabled region)
+# -----------------------------------------------------------------------------
+
+module "region_us_east_1" {
+  source = "../../modules/region"
+  count  = lookup(var.regions, "us_east_1", { enabled = false }).enabled ? 1 : 0
+
+  providers = {
+    aws = var.use_localstack ? aws.localstack : aws
+  }
+
+  project_name = var.project_name
+  environment  = var.environment
+  aws_region   = var.regions["us_east_1"].aws_region
+  region_key   = "us_east_1"
+  is_primary   = var.regions["us_east_1"].is_primary
+  tier         = var.regions["us_east_1"].tier
+  cidr_block   = var.regions["us_east_1"].cidr_block
+  enable_nat   = var.regions["us_east_1"].enable_nat
+
+  ecs_api_min      = var.regions["us_east_1"].ecs_api_min
+  ecs_api_max      = var.regions["us_east_1"].ecs_api_max
+  ecs_api_desired  = var.ecs_api_desired
+  use_fargate_spot = var.use_fargate_spot
+
+  api_image    = "${module.global.ecr_repository_urls["api"]}:${var.image_tag}"
+  worker_image = "${module.global.ecr_repository_urls["worker"]}:${var.image_tag}"
+
+  global_accelerator_endpoint_group_arn = var.enable_global_accelerator ? module.global.global_accelerator_endpoint_groups["us_east_1"] : ""
+  route53_zone_id                       = module.global.route53_zone_id
+  domain_name                           = var.domain_name
+
+  tags = var.tags
+}
+
+# -----------------------------------------------------------------------------
+# Data Module
+# -----------------------------------------------------------------------------
+
+module "data" {
+  source = "../../modules/data"
+
+  providers = {
+    aws = var.use_localstack ? aws.localstack : aws
+  }
+
+  project_name = var.project_name
+  environment  = var.environment
+  regions      = var.regions
+
+  # Aurora configuration
+  aurora_engine_version      = var.aurora_engine_version
+  aurora_instance_class      = var.aurora_instance_class
+  aurora_database_name       = var.aurora_database_name
+  aurora_skip_final_snapshot = true  # Safe for dev
+  aurora_deletion_protection = false # Safe for dev
+
+  # DynamoDB configuration
+  dynamodb_billing_mode = "PAY_PER_REQUEST"
+
+  # Redis configuration
+  redis_node_type          = var.redis_node_type
+  redis_num_cache_clusters = 1 # Single node for dev
+
+  # Network configuration from region modules
+  vpc_ids = {
+    us_east_1 = length(module.region_us_east_1) > 0 ? module.region_us_east_1[0].vpc_id : ""
+  }
+
+  private_subnet_ids = {
+    us_east_1 = length(module.region_us_east_1) > 0 ? module.region_us_east_1[0].private_subnet_ids : []
+  }
+
+  database_security_group_ids = {
+    us_east_1 = length(module.region_us_east_1) > 0 ? module.region_us_east_1[0].database_security_group_id : ""
+  }
+
+  redis_security_group_ids = {
+    us_east_1 = length(module.region_us_east_1) > 0 ? module.region_us_east_1[0].redis_security_group_id : ""
+  }
+
+  tags = var.tags
+}
+
+# -----------------------------------------------------------------------------
+# Outputs
+# -----------------------------------------------------------------------------
+
+output "global_accelerator_ips" {
+  description = "Global Accelerator IP addresses"
+  value       = module.global.global_accelerator_ip_addresses
+}
+
+output "global_accelerator_dns" {
+  description = "Global Accelerator DNS name"
+  value       = module.global.global_accelerator_dns_name
+}
+
+output "ecr_repository_urls" {
+  description = "ECR repository URLs"
+  value       = module.global.ecr_repository_urls
+}
+
+output "region_us_east_1_alb_dns" {
+  description = "US East 1 ALB DNS name"
+  value       = length(module.region_us_east_1) > 0 ? module.region_us_east_1[0].alb_dns_name : ""
+}
+
+output "aurora_endpoint" {
+  description = "Aurora primary endpoint"
+  value       = module.data.aurora_primary_endpoint
+}
+
+output "redis_endpoint" {
+  description = "Redis primary endpoint"
+  value       = module.data.redis_primary_endpoint
+}
+
+output "dynamodb_tables" {
+  description = "DynamoDB table names"
+  value = {
+    sessions = module.data.dynamodb_sessions_table_name
+    orders   = module.data.dynamodb_orders_table_name
+    events   = module.data.dynamodb_events_table_name
+  }
+}

@@ -1,0 +1,95 @@
+# =============================================================================
+# Production Environment - Terraform Variables Example
+# =============================================================================
+# Copy this file to terraform.tfvars and fill in your values.
+# DO NOT commit terraform.tfvars with sensitive data to version control.
+# =============================================================================
+
+project_name = "multiregion"
+environment  = "prod"
+
+# Domain configuration
+domain_name             = "example.com"
+create_hosted_zone      = false
+existing_hosted_zone_id = "Z1234567890ABC"
+
+# ECR repositories
+ecr_repositories = ["api", "worker"]
+image_tag        = "v1.0.0"
+
+# ACM certificates (one per region)
+acm_certificate_arns = {
+  us_east_1      = "arn:aws:acm:us-east-1:123456789012:certificate/abc123"
+  eu_west_1      = "arn:aws:acm:eu-west-1:123456789012:certificate/def456"
+  ap_northeast_1 = "arn:aws:acm:ap-northeast-1:123456789012:certificate/ghi789"
+  sa_east_1      = "arn:aws:acm:sa-east-1:123456789012:certificate/jkl012"
+}
+
+# Multi-region configuration
+regions = {
+  # Primary region (read/write)
+  us_east_1 = {
+    enabled     = true
+    aws_region  = "us-east-1"
+    is_primary  = true
+    tier        = "primary"
+    cidr_block  = "10.0.0.0/16"
+    ecs_api_min = 2
+    ecs_api_max = 20
+    enable_nat  = true
+  }
+
+  # Secondary region (Europe)
+  eu_west_1 = {
+    enabled     = true
+    aws_region  = "eu-west-1"
+    is_primary  = false
+    tier        = "secondary"
+    cidr_block  = "10.1.0.0/16"
+    ecs_api_min = 2
+    ecs_api_max = 10
+    enable_nat  = true
+  }
+
+  # Secondary region (Asia Pacific)
+  ap_northeast_1 = {
+    enabled     = true
+    aws_region  = "ap-northeast-1"
+    is_primary  = false
+    tier        = "secondary"
+    cidr_block  = "10.2.0.0/16"
+    ecs_api_min = 2
+    ecs_api_max = 10
+    enable_nat  = true
+  }
+
+  # Tertiary region (South America)
+  sa_east_1 = {
+    enabled     = true
+    aws_region  = "sa-east-1"
+    is_primary  = false
+    tier        = "tertiary"
+    cidr_block  = "10.3.0.0/16"
+    ecs_api_min = 1
+    ecs_api_max = 5
+    enable_nat  = true
+  }
+}
+
+# ECS configuration
+use_fargate_spot = true
+
+# Database configuration
+aurora_engine_version = "15.4"
+aurora_instance_class = "db.r6g.large"
+aurora_database_name  = "app"
+
+# Redis configuration
+redis_node_type = "cache.r6g.large"
+
+# Tags
+tags = {
+  Team        = "platform"
+  CostCenter  = "production"
+  Compliance  = "soc2"
+}

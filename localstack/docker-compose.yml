@@ -1,0 +1,260 @@
+# =============================================================================
+# LocalStack Multi-Region Docker Compose
+# =============================================================================
+# This configuration creates multiple LocalStack containers to simulate
+# a multi-region AWS environment for local development.
+#
+# Each LocalStack container simulates a different AWS region:
+# - localstack-us-east-1 (Primary - North America)
+# - localstack-eu-west-1 (Europe)
+# - localstack-ap-northeast-1 (Asia Pacific)
+# - localstack-sa-east-1 (South America)
+# - localstack-me-south-1 (Middle East)
+# - localstack-af-south-1 (Africa)
+#
+# Shared services:
+# - PostgreSQL (simulates Aurora Global Database)
+# - Redis (simulates ElastiCache Global Datastore)
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # Shared Data Services
+  # ===========================================================================
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: multiregion-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts/postgres:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - multiregion
+
+  redis:
+    image: redis:7-alpine
+    container_name: multiregion-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - multiregion
+
+  # ===========================================================================
+  # LocalStack Instances (one per region)
+  # ===========================================================================
+
+  # Primary Region - US East 1 (Virginia)
+  localstack-us-east-1:
+    image: localstack/localstack:3.0
+    container_name: localstack-us-east-1
+    environment:
+      - SERVICES=acm,cloudformation,cloudwatch,dynamodb,ec2,ecr,ecs,elasticache,elb,elbv2,events,iam,kinesis,kms,lambda,logs,rds,route53,s3,secretsmanager,ses,sns,sqs,ssm,stepfunctions,sts
+      - DEFAULT_REGION=us-east-1
+      - AWS_DEFAULT_REGION=us-east-1
+      - LOCALSTACK_HOST=localstack-us-east-1
+      - HOSTNAME=localstack-us-east-1
+      - HOSTNAME_EXTERNAL=localstack-us-east-1
+      - DEBUG=0
+      - PERSISTENCE=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    ports:
+      - "4566:4566"
+      - "4510-4559:4510-4559"
+    volumes:
+      - localstack_us_east_1:/var/lib/localstack
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./init-scripts/us-east-1:/etc/localstack/init/ready.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - multiregion
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  # Europe - EU West 1 (Ireland)
+  localstack-eu-west-1:
+    image: localstack/localstack:3.0
+    container_name: localstack-eu-west-1
+    environment:
+      - SERVICES=acm,cloudformation,cloudwatch,dynamodb,ec2,ecr,ecs,elasticache,elb,elbv2,events,iam,kinesis,kms,lambda,logs,rds,route53,s3,secretsmanager,ses,sns,sqs,ssm,stepfunctions,sts
+      - DEFAULT_REGION=eu-west-1
+      - AWS_DEFAULT_REGION=eu-west-1
+      - LOCALSTACK_HOST=localstack-eu-west-1
+      - HOSTNAME=localstack-eu-west-1
+      - HOSTNAME_EXTERNAL=localstack-eu-west-1
+      - DEBUG=0
+      - PERSISTENCE=1
+    ports:
+      - "4567:4566"
+    volumes:
+      - localstack_eu_west_1:/var/lib/localstack
+      - ./init-scripts/eu-west-1:/etc/localstack/init/ready.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - multiregion
+    depends_on:
+      - localstack-us-east-1
+
+  # Asia Pacific - AP Northeast 1 (Tokyo)
+  localstack-ap-northeast-1:
+    image: localstack/localstack:3.0
+    container_name: localstack-ap-northeast-1
+    environment:
+      - SERVICES=acm,cloudformation,cloudwatch,dynamodb,ec2,ecr,ecs,elasticache,elb,elbv2,events,iam,kinesis,kms,lambda,logs,rds,route53,s3,secretsmanager,ses,sns,sqs,ssm,stepfunctions,sts
+      - DEFAULT_REGION=ap-northeast-1
+      - AWS_DEFAULT_REGION=ap-northeast-1
+      - LOCALSTACK_HOST=localstack-ap-northeast-1
+      - HOSTNAME=localstack-ap-northeast-1
+      - HOSTNAME_EXTERNAL=localstack-ap-northeast-1
+      - DEBUG=0
+      - PERSISTENCE=1
+    ports:
+      - "4568:4566"
+    volumes:
+      - localstack_ap_northeast_1:/var/lib/localstack
+      - ./init-scripts/ap-northeast-1:/etc/localstack/init/ready.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - multiregion
+    depends_on:
+      - localstack-us-east-1
+
+  # South America - SA East 1 (Sao Paulo)
+  localstack-sa-east-1:
+    image: localstack/localstack:3.0
+    container_name: localstack-sa-east-1
+    environment:
+      - SERVICES=acm,cloudformation,cloudwatch,dynamodb,ec2,ecr,ecs,elasticache,elb,elbv2,events,iam,kinesis,kms,lambda,logs,rds,route53,s3,secretsmanager,ses,sns,sqs,ssm,stepfunctions,sts
+      - DEFAULT_REGION=sa-east-1
+      - AWS_DEFAULT_REGION=sa-east-1
+      - LOCALSTACK_HOST=localstack-sa-east-1
+      - HOSTNAME=localstack-sa-east-1
+      - HOSTNAME_EXTERNAL=localstack-sa-east-1
+      - DEBUG=0
+      - PERSISTENCE=1
+    ports:
+      - "4569:4566"
+    volumes:
+      - localstack_sa_east_1:/var/lib/localstack
+      - ./init-scripts/sa-east-1:/etc/localstack/init/ready.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - multiregion
+    depends_on:
+      - localstack-us-east-1
+
+  # Middle East - ME South 1 (Bahrain)
+  localstack-me-south-1:
+    image: localstack/localstack:3.0
+    container_name: localstack-me-south-1
+    environment:
+      - SERVICES=acm,cloudformation,cloudwatch,dynamodb,ec2,ecr,ecs,elasticache,elb,elbv2,events,iam,kinesis,kms,lambda,logs,rds,route53,s3,secretsmanager,ses,sns,sqs,ssm,stepfunctions,sts
+      - DEFAULT_REGION=me-south-1
+      - AWS_DEFAULT_REGION=me-south-1
+      - LOCALSTACK_HOST=localstack-me-south-1
+      - HOSTNAME=localstack-me-south-1
+      - HOSTNAME_EXTERNAL=localstack-me-south-1
+      - DEBUG=0
+      - PERSISTENCE=1
+    ports:
+      - "4570:4566"
+    volumes:
+      - localstack_me_south_1:/var/lib/localstack
+      - ./init-scripts/me-south-1:/etc/localstack/init/ready.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - multiregion
+    depends_on:
+      - localstack-us-east-1
+
+  # Africa - AF South 1 (Cape Town)
+  localstack-af-south-1:
+    image: localstack/localstack:3.0
+    container_name: localstack-af-south-1
+    environment:
+      - SERVICES=acm,cloudformation,cloudwatch,dynamodb,ec2,ecr,ecs,elasticache,elb,elbv2,events,iam,kinesis,kms,lambda,logs,rds,route53,s3,secretsmanager,ses,sns,sqs,ssm,stepfunctions,sts
+      - DEFAULT_REGION=af-south-1
+      - AWS_DEFAULT_REGION=af-south-1
+      - LOCALSTACK_HOST=localstack-af-south-1
+      - HOSTNAME=localstack-af-south-1
+      - HOSTNAME_EXTERNAL=localstack-af-south-1
+      - DEBUG=0
+      - PERSISTENCE=1
+    ports:
+      - "4571:4566"
+    volumes:
+      - localstack_af_south_1:/var/lib/localstack
+      - ./init-scripts/af-south-1:/etc/localstack/init/ready.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - multiregion
+    depends_on:
+      - localstack-us-east-1
+
+# =============================================================================
+# Volumes
+# =============================================================================
+
+volumes:
+  postgres_data:
+  redis_data:
+  localstack_us_east_1:
+  localstack_eu_west_1:
+  localstack_ap_northeast_1:
+  localstack_sa_east_1:
+  localstack_me_south_1:
+  localstack_af_south_1:
+
+# =============================================================================
+# Networks
+# =============================================================================
+
+networks:
+  multiregion:
+    driver: bridge
+    name: multiregion-network
