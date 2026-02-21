@@ -3,7 +3,7 @@
 # LocalStack Init Script - AP Northeast 1 (Tokyo)
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 REGION="ap-northeast-1"
 PROJECT="multiregion"

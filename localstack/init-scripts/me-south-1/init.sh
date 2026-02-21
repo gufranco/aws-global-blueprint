@@ -3,7 +3,7 @@
 # LocalStack Init Script - ME South 1 (Bahrain)
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 REGION="me-south-1"
 PROJECT="multiregion"

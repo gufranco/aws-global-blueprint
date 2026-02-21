@@ -3,7 +3,7 @@
 # LocalStack Init Script - AF South 1 (Cape Town)
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 REGION="af-south-1"
 PROJECT="multiregion"

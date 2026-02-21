@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS orders (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
     status VARCHAR(50) DEFAULT 'pending',
-    total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    total_amount DECIMAL(10, 2) NOT NULL DEFAULT 0 CHECK (total_amount >= 0),
     currency VARCHAR(3) DEFAULT 'USD',
     shipping_address JSONB,
     metadata JSONB DEFAULT '{}',
@@ -64,9 +64,9 @@ CREATE TABLE IF NOT EXISTS order_items (
     order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
     product_id UUID NOT NULL,
     product_name VARCHAR(255) NOT NULL,
-    quantity INTEGER NOT NULL DEFAULT 1,
-    unit_price DECIMAL(10, 2) NOT NULL,
-    total_price DECIMAL(10, 2) NOT NULL,
+    quantity INTEGER NOT NULL DEFAULT 1 CHECK (quantity > 0),
+    unit_price DECIMAL(10, 2) NOT NULL CHECK (unit_price >= 0),
+    total_price DECIMAL(10, 2) NOT NULL CHECK (total_price >= 0),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -82,9 +82,9 @@ CREATE TABLE IF NOT EXISTS products (
     sku VARCHAR(100) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    price DECIMAL(10, 2) NOT NULL,
+    price DECIMAL(10, 2) NOT NULL CHECK (price >= 0),
     currency VARCHAR(3) DEFAULT 'USD',
-    stock_quantity INTEGER DEFAULT 0,
+    stock_quantity INTEGER DEFAULT 0 CHECK (stock_quantity >= 0),
     category VARCHAR(100),
     metadata JSONB DEFAULT '{}',
     active BOOLEAN DEFAULT true,

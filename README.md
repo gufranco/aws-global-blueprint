@@ -193,8 +193,6 @@ aws-multiregion-stack/
 │   ├── adr/              # Architecture Decision Records
 │   ├── runbooks/         # Operational runbooks
 │   └── postman/          # API collection
-├── .github/
-│   └── workflows/        # CI/CD pipelines
 ├── Makefile              # Development commands
 └── README.md
 ```

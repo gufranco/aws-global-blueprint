@@ -6,7 +6,7 @@
 # It runs automatically when the LocalStack container starts.
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 REGION="us-east-1"
 PROJECT="multiregion"

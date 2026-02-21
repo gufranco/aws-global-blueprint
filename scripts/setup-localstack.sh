@@ -2,7 +2,7 @@
 
 # Setup script for LocalStack development environment
 
-set -e
+set -euo pipefail
 
 echo "🚀 Setting up LocalStack environment..."
 

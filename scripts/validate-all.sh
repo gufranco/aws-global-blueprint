@@ -2,52 +2,51 @@
 
 # Validate all Terraform modules
 
-set -e
+set -euo pipefail
 
-echo "🔍 Validating all Terraform modules..."
+echo "Validating all Terraform modules..."
 echo "======================================"
 
-MODULES=("networking" "serverless" "server" "lambda" "edge" "cognito" "dynamodb" "s3" "sa-east-1")
+MODULES=("modules/global" "modules/region" "modules/data" "modules/security" "modules/compliance" "modules/observability" "modules/resilience" "modules/finops")
 FAILED=0
 
 for module in "${MODULES[@]}"; do
     echo ""
-    echo "📦 Validating $module module..."
-    
+    echo "Validating $module..."
+
     if [ -d "$module" ]; then
-        cd "$module"
-        
+        pushd "$module" > /dev/null
+
         if terraform init -backend=false > /dev/null 2>&1; then
             if terraform validate > /dev/null 2>&1; then
                 if terraform fmt -check > /dev/null 2>&1; then
-                    echo "✅ $module: OK (init, validate, fmt)"
+                    echo "  OK (init, validate, fmt)"
                 else
-                    echo "⚠️  $module: Format issues found (run: terraform fmt)"
+                    echo "  Format issues found (run: terraform fmt)"
                     FAILED=$((FAILED + 1))
                 fi
             else
-                echo "❌ $module: Validation failed"
+                echo "  Validation failed:"
                 terraform validate
                 FAILED=$((FAILED + 1))
             fi
         else
-            echo "❌ $module: Initialization failed"
+            echo "  Initialization failed"
             FAILED=$((FAILED + 1))
         fi
-        
-        cd ..
+
+        popd > /dev/null
     else
-        echo "⚠️  $module: Directory not found, skipping"
+        echo "  Directory not found, skipping"
     fi
 done
 
 echo ""
 echo "======================================"
 if [ $FAILED -eq 0 ]; then
-    echo "✅ All modules validated successfully!"
+    echo "All modules validated successfully!"
     exit 0
 else
-    echo "❌ $FAILED module(s) failed validation"
+    echo "$FAILED module(s) failed validation"
     exit 1
 fi
-

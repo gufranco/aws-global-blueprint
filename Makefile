@@ -4,8 +4,8 @@
 # Configuration
 # =============================================================================
 
-# Docker context for Colima (default: colima-personal)
-DOCKER_CONTEXT ?= colima-personal
+# Docker context (override with: make localstack-up DOCKER_CONTEXT=colima-personal)
+DOCKER_CONTEXT ?= default
 
 # Environment (dev, staging, prod)
 ENV ?= dev
@@ -14,7 +14,7 @@ ENV ?= dev
 REGION ?= us-east-1
 
 help: ## Show this help message
-	@echo 'Usage: make [target] [ENV=dev] [REGION=us-east-1] [DOCKER_CONTEXT=colima-personal]'
+	@echo 'Usage: make [target] [ENV=dev] [REGION=us-east-1] [DOCKER_CONTEXT=default]'
 	@echo ''
 	@echo 'Available targets:'
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-30s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -22,7 +22,7 @@ help: ## Show this help message
 	@echo 'Variables:'
 	@echo '  ENV=$(ENV) (default: dev, options: dev, staging, prod)'
 	@echo '  REGION=$(REGION) (default: us-east-1)'
-	@echo '  DOCKER_CONTEXT=$(DOCKER_CONTEXT) (default: colima-personal)'
+	@echo '  DOCKER_CONTEXT=$(DOCKER_CONTEXT) (default: default)'
 
 # =============================================================================
 # Terraform - Environments

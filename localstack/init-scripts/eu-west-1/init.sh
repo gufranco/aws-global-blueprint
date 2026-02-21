@@ -3,7 +3,7 @@
 # LocalStack Init Script - EU West 1 (Europe)
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 REGION="eu-west-1"
 PROJECT="multiregion"

@@ -88,8 +88,12 @@ export default function() {
     check(healthRes, {
       'health check status is 200': (r) => r.status === 200,
       'health check response is healthy': (r) => {
-        const body = JSON.parse(r.body);
-        return body.status === 'healthy';
+        try {
+          const body = JSON.parse(r.body);
+          return body.status === 'healthy';
+        } catch {
+          return false;
+        }
       },
     });
 
@@ -115,12 +119,16 @@ export default function() {
     const success = check(createRes, {
       'create order status is 201': (r) => r.status === 201,
       'create order has id': (r) => {
-        if (r.status === 201) {
-          const body = JSON.parse(r.body);
-          orderId = body.id;
-          return !!body.id;
+        try {
+          if (r.status === 201) {
+            const body = JSON.parse(r.body);
+            orderId = body.id;
+            return !!body.id;
+          }
+          return false;
+        } catch {
+          return false;
         }
-        return false;
       },
     });
 
@@ -146,11 +154,15 @@ export default function() {
       const success = check(getRes, {
         'get order status is 200': (r) => r.status === 200,
         'get order has correct id': (r) => {
-          if (r.status === 200) {
-            const body = JSON.parse(r.body);
-            return body.id === orderId;
+          try {
+            if (r.status === 200) {
+              const body = JSON.parse(r.body);
+              return body.id === orderId;
+            }
+            return false;
+          } catch {
+            return false;
           }
-          return false;
         },
       });
 
@@ -169,11 +181,15 @@ export default function() {
     check(listRes, {
       'list orders status is 200': (r) => r.status === 200,
       'list orders has pagination': (r) => {
-        if (r.status === 200) {
-          const body = JSON.parse(r.body);
-          return body.pagination !== undefined;
+        try {
+          if (r.status === 200) {
+            const body = JSON.parse(r.body);
+            return body.pagination !== undefined;
+          }
+          return false;
+        } catch {
+          return false;
         }
-        return false;
       },
     });
 

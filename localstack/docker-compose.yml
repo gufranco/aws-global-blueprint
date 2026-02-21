@@ -39,6 +39,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     networks:
       - multiregion
 
@@ -55,6 +59,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
     networks:
       - multiregion
 
@@ -88,6 +96,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 2G
     networks:
       - multiregion
     depends_on:
@@ -119,6 +131,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     networks:
       - multiregion
     depends_on:
@@ -147,6 +163,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     networks:
       - multiregion
     depends_on:
@@ -175,6 +195,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     networks:
       - multiregion
     depends_on:
@@ -203,6 +227,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     networks:
       - multiregion
     depends_on:
@@ -231,6 +259,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 1G
     networks:
       - multiregion
     depends_on:

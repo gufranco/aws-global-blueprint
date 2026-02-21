@@ -3,7 +3,7 @@
 # LocalStack Init Script - SA East 1 (Sao Paulo)
 # =============================================================================
 
-set -e
+set -euo pipefail
 
 REGION="sa-east-1"
 PROJECT="multiregion"

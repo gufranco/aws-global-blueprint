@@ -1,0 +1,43 @@
+# Dependencies
+node_modules
+
+# Build output
+dist
+
+# Terraform
+modules
+.terraform
+*.tfstate
+*.tfstate.*
+.terraform.lock.hcl
+
+# LocalStack
+localstack
+
+# Tests
+tests
+coverage
+
+# IDE
+.idea
+.vscode
+.cursor
+
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose*.yml
+
+# Documentation
+*.md
+LICENSE
+
+# Scripts
+scripts
+
+# Environment
+.env
+.env.*
+!.env.example
