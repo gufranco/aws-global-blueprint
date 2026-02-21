@@ -105,7 +105,7 @@ resource "aws_iam_role_policy" "rotation_lambda" {
           "secretsmanager:UpdateSecretVersionStage",
           "secretsmanager:DescribeSecret"
         ]
-        Resource = var.rds_secret_arn != "" ? var.rds_secret_arn : "*"
+        Resource = var.rds_secret_arn != "" ? var.rds_secret_arn : "arn:aws:secretsmanager:*:*:secret:*"
       },
       {
         Effect = "Allow"
@@ -120,7 +120,7 @@ resource "aws_iam_role_policy" "rotation_lambda" {
           "kms:Decrypt",
           "kms:GenerateDataKey"
         ]
-        Resource = var.secrets_kms_key_arn != "" ? var.secrets_kms_key_arn : "*"
+        Resource = var.secrets_kms_key_arn != "" ? var.secrets_kms_key_arn : "arn:aws:kms:*:*:key/*"
       },
       {
         Effect = "Allow"

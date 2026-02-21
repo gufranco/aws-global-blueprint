@@ -42,7 +42,7 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
         Action = [
           "secretsmanager:GetSecretValue"
         ]
-        Resource = var.database_secret_arn != "" ? [var.database_secret_arn] : ["*"]
+        Resource = var.database_secret_arn != "" ? [var.database_secret_arn] : ["arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project_name}-*"]
       },
       {
         Effect = "Allow"
@@ -52,7 +52,8 @@ resource "aws_iam_role_policy" "ecs_execution_secrets" {
         Resource = "*"
         Condition = {
           StringEquals = {
-            "kms:ViaService" = "secretsmanager.${var.aws_region}.amazonaws.com"
+            "kms:ViaService"    = "secretsmanager.${var.aws_region}.amazonaws.com"
+            "kms:CallerAccount" = data.aws_caller_identity.current.account_id
           }
         }
       }
@@ -422,7 +423,7 @@ resource "aws_iam_role_policy" "lambda_custom" {
         Action = [
           "secretsmanager:GetSecretValue"
         ]
-        Resource = var.database_secret_arn != "" ? [var.database_secret_arn] : ["*"]
+        Resource = var.database_secret_arn != "" ? [var.database_secret_arn] : ["arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project_name}-*"]
       }
     ]
   })

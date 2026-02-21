@@ -67,6 +67,11 @@ resource "aws_kms_key" "main" {
           "kms:DescribeKey"
         ]
         Resource = "*"
+        Condition = {
+          StringEquals = {
+            "kms:CallerAccount" = data.aws_caller_identity.current.account_id
+          }
+        }
       },
       {
         Sid    = "Allow DynamoDB"
@@ -82,6 +87,11 @@ resource "aws_kms_key" "main" {
           "kms:DescribeKey"
         ]
         Resource = "*"
+        Condition = {
+          StringEquals = {
+            "kms:CallerAccount" = data.aws_caller_identity.current.account_id
+          }
+        }
       },
       {
         Sid    = "Allow Secrets Manager"
@@ -97,6 +107,11 @@ resource "aws_kms_key" "main" {
           "kms:DescribeKey"
         ]
         Resource = "*"
+        Condition = {
+          StringEquals = {
+            "kms:CallerAccount" = data.aws_caller_identity.current.account_id
+          }
+        }
       },
       {
         Sid    = "Allow CloudWatch Logs"
@@ -170,6 +185,11 @@ resource "aws_kms_key" "secrets" {
           "kms:DescribeKey"
         ]
         Resource = "*"
+        Condition = {
+          StringEquals = {
+            "kms:CallerAccount" = data.aws_caller_identity.current.account_id
+          }
+        }
       },
       {
         Sid    = "Allow Lambda for rotation"
@@ -182,6 +202,11 @@ resource "aws_kms_key" "secrets" {
           "kms:GenerateDataKey"
         ]
         Resource = "*"
+        Condition = {
+          StringEquals = {
+            "kms:CallerAccount" = data.aws_caller_identity.current.account_id
+          }
+        }
       }
     ]
   })
