@@ -80,15 +80,15 @@ sequenceDiagram
     Client->>GA: HTTPS Request
     GA->>ALB: Route to nearest region
     ALB->>API: Forward request
-    
+
     API->>DB: Read/Write data
     DB-->>API: Response
-    
+
     API->>SNS: Publish event
     API-->>Client: HTTP Response
-    
+
     SNS->>SQS: Fan-out message
-    
+
     loop Process Messages
         SQS->>Worker: Poll messages
         Worker->>DB: Process async work
@@ -105,7 +105,7 @@ sequenceDiagram
 ### Infrastructure
 - **Multi-Region Deployment**: Deploy across 6+ AWS regions globally
 - **Global Accelerator**: Anycast routing for optimal latency worldwide
-- **ECS Fargate**: Serverless container orchestration (no EC2 management)
+- **ECS Fargate**: Serverless container orchestration, no EC2 management
 - **Auto Scaling**: CPU, memory, and SQS queue-depth based scaling
 - **Blue/Green Deployments**: Zero-downtime deployments with CodeDeploy
 
@@ -123,17 +123,18 @@ sequenceDiagram
 
 ### Security
 - **WAF**: OWASP Top 10 protection, rate limiting, geo blocking
-- **KMS**: Encryption at rest for all data stores
+- **KMS**: Encryption at rest for all data stores with account-scoped policies
 - **GuardDuty**: Threat detection and monitoring
 - **Security Hub**: Centralized security findings
 - **VPC Endpoints**: Private connectivity to AWS services
 - **Secrets Manager**: Automatic credential rotation
+- **IAM Least Privilege**: Scoped resource ARNs, no wildcard permissions
 
 ### Observability
 - **CloudWatch**: Dashboards, alarms, and log aggregation
 - **X-Ray**: Distributed tracing across services
 - **OpenTelemetry**: Instrumentation and metrics collection
-- **Custom Metrics**: Business KPIs (orders/min, latency p99)
+- **Custom Metrics**: Business KPIs like orders/min and latency p99
 
 ### Resilience
 - **Circuit Breakers**: Graceful degradation on failures
@@ -143,16 +144,16 @@ sequenceDiagram
 
 ### Cost Optimization
 - **Fargate Spot**: Up to 70% savings on worker services
-- **AWS Budgets**: Proactive cost alerts
+- **AWS Budgets**: Proactive cost alerts per service
 - **Cost Allocation Tags**: Detailed cost tracking
-- **S3 Lifecycle Policies**: Automatic data tiering
+- **S3 Lifecycle Policies**: Automatic data tiering to Glacier
 
 ## Project Structure
 
 ```
 aws-multiregion-stack/
 ├── modules/
-│   ├── global/           # Global Accelerator, Route53, ECR, IAM
+│   ├── global/           # Global Accelerator, Route53, ECR
 │   ├── region/           # VPC, ECS, ALB, SQS, SNS, Lambda, CodeDeploy
 │   ├── data/             # Aurora Global, DynamoDB Global, ElastiCache
 │   ├── security/         # WAF, KMS, GuardDuty, Security Hub, VPC Endpoints
@@ -165,26 +166,30 @@ aws-multiregion-stack/
 │   └── prod/             # Production multi-region deployment
 ├── app/
 │   ├── shared/           # Shared TypeScript library (@multiregion/shared)
-│   │   ├── src/
-│   │   │   ├── aws/      # AWS SDK clients (DynamoDB, SQS, SNS, S3)
-│   │   │   ├── config/   # Environment configuration
-│   │   │   ├── resilience/  # Circuit breaker patterns
-│   │   │   ├── tracing/  # OpenTelemetry setup
-│   │   │   └── metrics/  # Custom CloudWatch metrics
-│   │   └── package.json
+│   │   └── src/
+│   │       ├── aws/      # AWS SDK clients (DynamoDB, SQS, SNS, S3)
+│   │       ├── config/   # Environment configuration with Zod validation
+│   │       ├── resilience/  # Circuit breaker patterns
+│   │       ├── tracing/  # OpenTelemetry setup
+│   │       └── metrics/  # Custom CloudWatch metrics
 │   ├── api/              # Fastify REST API service
-│   │   ├── src/
-│   │   │   ├── routes/   # API endpoints (health, orders)
-│   │   │   ├── services/ # Business logic
-│   │   │   └── middleware/  # Region awareness, validation
-│   │   └── package.json
-│   └── worker/           # SQS message processor service
-│       ├── src/
-│       │   └── handlers/ # Message handlers (orders, notifications)
-│       └── package.json
+│   │   ├── Dockerfile
+│   │   └── src/
+│   │       ├── routes/   # API endpoints (health, orders)
+│   │       ├── services/ # Business logic
+│   │       └── middleware/  # Region awareness, validation
+│   ├── worker/           # SQS message processor service
+│   │   ├── Dockerfile
+│   │   └── src/
+│   │       └── handlers/ # Message handlers (orders, notifications)
+│   └── .env.example      # Required environment variables
 ├── localstack/
-│   ├── docker-compose.yml  # Multi-region LocalStack setup
+│   ├── docker-compose.yml  # Multi-region LocalStack setup (6 regions)
 │   └── init-scripts/       # Per-region initialization scripts
+├── scripts/
+│   ├── validate-all.sh     # Validate all Terraform modules
+│   ├── test-localstack.sh  # Test LocalStack infrastructure
+│   └── setup-localstack.sh # LocalStack setup helper
 ├── tests/
 │   ├── integration/      # Integration tests with LocalStack
 │   ├── load/             # K6 performance tests
@@ -193,7 +198,7 @@ aws-multiregion-stack/
 │   ├── adr/              # Architecture Decision Records
 │   ├── runbooks/         # Operational runbooks
 │   └── postman/          # API collection
-├── Makefile              # Development commands
+├── Makefile              # Development commands (run: make help)
 └── README.md
 ```
 
@@ -204,48 +209,39 @@ aws-multiregion-stack/
 | Tool | Version | Purpose |
 |------|---------|---------|
 | Terraform | >= 1.6 | Infrastructure as Code |
-| Node.js | >= 20 | Application runtime |
+| Node.js | 20 | Application runtime |
 | pnpm | >= 8 | Package manager |
 | Docker | Latest | LocalStack and containers |
 | AWS CLI | v2 | AWS interactions |
 
 ### Local Development with LocalStack
 
-1. **Clone the repository**:
 ```bash
-git clone https://github.com/yourusername/aws-multiregion-stack.git
+# 1. Clone and set up the project
+git clone https://github.com/gufranco/aws-multiregion-stack.git
 cd aws-multiregion-stack
-```
+make setup
 
-2. **Start LocalStack** (simulates 6 AWS regions):
-```bash
-cd localstack
-docker compose up -d
-```
+# 2. Start LocalStack (6 AWS regions + PostgreSQL + Redis)
+make localstack-up
 
-3. **Wait for initialization** (creates tables, queues, topics):
-```bash
-docker logs -f localstack-us-east-1
-# Wait for "LocalStack us-east-1 initialized successfully"
-```
-
-4. **Install application dependencies**:
-```bash
+# 3. Install and build the application
 cd app
 pnpm install
 pnpm build
-```
 
-5. **Start the API**:
-```bash
+# 4. Configure environment variables
+cp .env.example .env
+# Edit .env with your LocalStack endpoints
+
+# 5. Start the API
 cd api
 node dist/index.js
 ```
 
-6. **Access the application**:
-- API: http://localhost:3000
-- Swagger UI: http://localhost:3000/docs
-- Health Check: http://localhost:3000/health
+The API will be available at:
+- **API**: http://localhost:3000
+- **Health Check**: http://localhost:3000/health
 
 ### Test the API
 
@@ -280,29 +276,77 @@ curl "http://localhost:3000/api/orders?customerId=550e8400-e29b-41d4-a716-446655
 
 ### Production Deployment
 
-1. **Configure AWS credentials**:
 ```bash
+# 1. Configure AWS credentials
 export AWS_PROFILE=production
-aws configure
-```
 
-2. **Initialize Terraform backend** (S3 + DynamoDB for state locking):
-```bash
+# 2. Initialize Terraform backend (S3 + DynamoDB for state locking)
 cd environments/prod
 terraform init
-```
 
-3. **Review and customize variables**:
-```bash
+# 3. Review and customize variables
 cp terraform.tfvars.example terraform.tfvars
 # Edit terraform.tfvars with your values
-```
 
-4. **Plan and apply**:
-```bash
+# 4. Plan and apply
 terraform plan -out=tfplan
 terraform apply tfplan
 ```
+
+## Development Commands
+
+The Makefile provides shortcuts for common operations. Run `make help` to see all available targets.
+
+### Infrastructure
+
+| Command | Description |
+|---------|-------------|
+| `make init` | Initialize Terraform for current environment |
+| `make plan` | Plan Terraform changes |
+| `make apply` | Apply Terraform changes |
+| `make fmt` | Format all Terraform files |
+| `make fmt-check` | Check Terraform formatting |
+| `make validate-modules` | Validate all Terraform modules |
+
+### LocalStack
+
+| Command | Description |
+|---------|-------------|
+| `make localstack-up` | Start multi-region LocalStack with health checks |
+| `make localstack-down` | Stop all LocalStack containers |
+| `make localstack-clean` | Stop LocalStack and remove volumes |
+| `make localstack-status` | Show status of all regions |
+| `make localstack-logs REGION=us-east-1` | Show logs for a specific region |
+
+### Application
+
+| Command | Description |
+|---------|-------------|
+| `make up` | Start everything: LocalStack + App |
+| `make down` | Stop everything |
+| `make app-build` | Build Docker images for API and Worker |
+| `make app-test` | Run application tests |
+
+### AWS CLI Shortcuts
+
+These commands target LocalStack and accept `REGION=<region>`:
+
+| Command | Description |
+|---------|-------------|
+| `make list-sqs` | List SQS queues |
+| `make list-sns` | List SNS topics |
+| `make list-dynamodb` | List DynamoDB tables |
+| `make list-s3` | List S3 buckets |
+| `make list-secrets` | List Secrets Manager secrets |
+| `make list-all-regions` | List SQS queues across all 6 regions |
+
+### Database
+
+| Command | Description |
+|---------|-------------|
+| `make db-connect` | Connect to PostgreSQL |
+| `make redis-cli` | Connect to Redis CLI |
+| `make db-reset` | Drop and recreate the database |
 
 ## Region Configuration
 
@@ -365,30 +409,45 @@ regions = {
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/health` | Basic health check |
-| GET | `/health/ready` | Readiness probe |
-| GET | `/health/live` | Liveness probe |
-| GET | `/health/detailed` | Health with dependency status |
-| POST | `/api/orders` | Create a new order |
-| GET | `/api/orders/:id` | Get order by ID |
-| GET | `/api/orders` | List orders (paginated) |
-| PATCH | `/api/orders/:id/status` | Update order status |
+| `GET` | `/health` | Basic health check |
+| `GET` | `/health/ready` | Readiness probe |
+| `GET` | `/health/live` | Liveness probe |
+| `GET` | `/health/detailed` | Health with dependency status |
+| `POST` | `/api/orders` | Create a new order |
+| `GET` | `/api/orders/:id` | Get order by ID |
+| `GET` | `/api/orders` | List orders with pagination |
+| `PATCH` | `/api/orders/:id/status` | Update order status |
 
-### OpenAPI Documentation
+### Query Parameters
 
-Full API documentation available at `/docs` when running the application.
+| Endpoint | Parameter | Type | Description |
+|----------|-----------|------|-------------|
+| `GET /api/orders` | `customerId` | UUID | Filter by customer |
+| `GET /api/orders` | `status` | string | Filter by status |
+| `GET /api/orders` | `page` | number | Page number, default: 1 |
+| `GET /api/orders` | `limit` | number | Items per page, default: 20, max: 100 |
 
-Download the Postman collection from `docs/postman/multiregion-api.json`.
+### Order Status Flow
+
+```
+pending -> confirmed -> processing -> shipped -> delivered
+  |            |            |
+  v            v            v
+cancelled  cancelled    cancelled
+```
 
 ## Environment Variables
+
+All variables are documented in `app/.env.example`. Copy it to `.env` and fill in the values.
 
 ### Application
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `NODE_ENV` | Environment (development/staging/production) | `development` |
+| `NODE_ENV` | Environment: development, staging, production | `development` |
 | `PORT` | API server port | `3000` |
-| `PROJECT_NAME` | Project identifier | `multiregion` |
+| `PROJECT_NAME` | Project identifier used in resource names | `multiregion` |
+| `CORS_ALLOWED_ORIGINS` | Comma-separated allowed origins for CORS | all origins in dev |
 
 ### AWS/Region
 
@@ -397,7 +456,7 @@ Download the Postman collection from `docs/postman/multiregion-api.json`.
 | `AWS_REGION` | AWS region code | `us-east-1` |
 | `REGION_KEY` | Region identifier | `us_east_1` |
 | `IS_PRIMARY_REGION` | Primary region flag | `true` |
-| `REGION_TIER` | Region tier (primary/secondary/tertiary) | `primary` |
+| `REGION_TIER` | Region tier: primary, secondary, tertiary | `primary` |
 
 ### LocalStack
 
@@ -425,41 +484,23 @@ Download the Postman collection from `docs/postman/multiregion-api.json`.
 
 ## Testing
 
-### Unit Tests
-
 ```bash
-cd app
-pnpm test
-```
+# Unit tests
+make test
 
-### Integration Tests (with LocalStack)
+# Integration tests (requires LocalStack)
+make localstack-up
+make test-integration
 
-```bash
-# Start LocalStack
-cd localstack && docker compose up -d
+# Load tests with K6
+make test-load
 
-# Run integration tests
-cd app && pnpm test:integration
-```
+# Terraform module validation
+make validate-modules
 
-### Load Tests
-
-```bash
-# Install K6
-brew install k6
-
-# Run load tests
-k6 run tests/load/api-load.js
-```
-
-### Terraform Tests
-
-```bash
-# Install Go and Terratest dependencies
+# Terraform tests with Terratest
 cd tests/terraform
 go mod download
-
-# Run tests
 go test -v -timeout 30m
 ```
 
@@ -469,10 +510,10 @@ go test -v -timeout 30m
 
 Each region has a dedicated dashboard displaying:
 - ECS CPU and Memory utilization
-- ALB request count, latency (p50, p95, p99)
-- HTTP status code distribution (2XX, 4XX, 5XX)
-- SQS queue depth and age
-- DLQ message count
+- ALB request count, latency at p50, p90, and p99
+- HTTP status code distribution: 2XX, 4XX, 5XX
+- SQS queue depth and message age
+- DLQ message count and error rate
 
 ### Alarms
 
@@ -487,7 +528,7 @@ Each region has a dedicated dashboard displaying:
 
 ### X-Ray Tracing
 
-Distributed tracing is enabled by default. View traces in the AWS X-Ray console to analyze request flow across services.
+Distributed tracing is enabled by default. View traces in the AWS X-Ray console to analyze request flow across services and regions.
 
 ## Security
 
@@ -505,8 +546,17 @@ Distributed tracing is enabled by default. View traces in the AWS X-Ray console 
 | RDS/Aurora | KMS encryption at rest |
 | DynamoDB | AWS managed encryption |
 | S3 | SSE-KMS with bucket keys |
+| SQS | Server-side encryption |
 | ElastiCache | In-transit and at-rest encryption |
 | Secrets | KMS-encrypted Secrets Manager |
+
+### IAM Security
+
+All IAM policies follow least-privilege principles:
+- Resource ARNs scoped to specific services and prefixes
+- KMS key policies use `kms:CallerAccount` conditions
+- No wildcard resource permissions in production roles
+- VPC flow logs scoped to specific log groups
 
 ### Compliance
 
@@ -519,10 +569,11 @@ Distributed tracing is enabled by default. View traces in the AWS X-Ray console 
 
 ### Strategies
 
-- **Fargate Spot**: Workers use Spot capacity (70% savings)
-- **Auto Scaling**: Scale down during low traffic
-- **S3 Lifecycle**: Automatic transition to cheaper storage classes
+- **Fargate Spot**: Workers use Spot capacity for up to 70% savings
+- **Auto Scaling**: Scale down during low traffic periods
+- **S3 Lifecycle**: Automatic transition to Glacier after configurable days
 - **Reserved Capacity**: Commit to Aurora and ElastiCache for savings
+- **Tiered Regions**: Tertiary regions run fewer tasks by default
 
 ### Budget Alerts
 
@@ -531,11 +582,7 @@ Distributed tracing is enabled by default. View traces in the AWS X-Ray console 
 | Forecasted | 50%, 80% of budget |
 | Actual | 100%, 120% of budget |
 
-Alerts are sent via SNS to configured email addresses.
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines, code style, and pull request process.
+Alerts are sent via SNS to configured email addresses. Separate budgets track ECS and RDS spending.
 
 ## Architecture Decisions
 
@@ -553,8 +600,4 @@ Recovery runbooks are available in [docs/runbooks/](docs/runbooks/):
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
----
-
-**Built with Terraform, TypeScript, and AWS best practices.**
+MIT License. See [LICENSE](LICENSE) for details.

@@ -48,14 +48,14 @@ output: ## Show Terraform outputs for current environment
 # =============================================================================
 
 init-modules: ## Initialize all Terraform modules
-	@for dir in modules/global modules/region modules/data; do \
+	@for dir in modules/global modules/region modules/data modules/security modules/compliance modules/observability modules/resilience modules/finops; do \
 		echo "Initializing $$dir..."; \
 		(cd $$dir && terraform init -backend=false) || exit 1; \
 	done
 	@echo "All modules initialized successfully"
 
 validate-modules: ## Validate all Terraform modules
-	@for dir in modules/global modules/region modules/data; do \
+	@for dir in modules/global modules/region modules/data modules/security modules/compliance modules/observability modules/resilience modules/finops; do \
 		echo "Validating $$dir..."; \
 		(cd $$dir && terraform validate) || exit 1; \
 	done
@@ -296,19 +296,3 @@ clean: ## Clean temporary files
 
 clean-all: clean localstack-clean ## Clean everything including Docker volumes
 	@echo "All cleaned"
-
-# =============================================================================
-# Legacy Module Commands (for backward compatibility)
-# =============================================================================
-
-init-networking: ## [Legacy] Initialize Terraform for networking
-	cd networking && terraform init
-
-plan-networking: ## [Legacy] Plan Terraform changes for networking
-	cd networking && terraform plan
-
-apply-networking: ## [Legacy] Apply Terraform changes for networking
-	cd networking && terraform apply
-
-destroy-networking: ## [Legacy] Destroy networking infrastructure
-	cd networking && terraform destroy
