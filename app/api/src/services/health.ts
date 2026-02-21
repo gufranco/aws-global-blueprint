@@ -8,6 +8,17 @@ import { config, getDatabaseUrl, createLogger } from '@multiregion/shared';
 
 const logger = createLogger('health');
 
+const HEALTH_CHECK_TIMEOUT_MS = 3000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Health check timed out after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 // Database connection pool
 let dbPool: Pool | null = null;
 
@@ -42,26 +53,28 @@ function getRedisClient(): Redis {
   return redisClient;
 }
 
-// Check database health
+// Check database health with timeout
 export async function checkDatabaseHealth(): Promise<boolean> {
   try {
     const pool = getDbPool();
-    const result = await pool.query('SELECT 1');
+    const result = await withTimeout(pool.query('SELECT 1'), HEALTH_CHECK_TIMEOUT_MS);
     return result.rows.length > 0;
   } catch (error) {
     logger.error({ error }, 'Database health check failed');
+    dbPool = null;
     return false;
   }
 }
 
-// Check Redis health
+// Check Redis health with timeout
 export async function checkRedisHealth(): Promise<boolean> {
   try {
     const client = getRedisClient();
-    const result = await client.ping();
+    const result = await withTimeout(client.ping(), HEALTH_CHECK_TIMEOUT_MS);
     return result === 'PONG';
   } catch (error) {
     logger.error({ error }, 'Redis health check failed');
+    redisClient = null;
     return false;
   }
 }

@@ -7,6 +7,8 @@ import { WorkerManager } from './worker.js';
 
 const logger = createLogger('worker');
 
+let worker: WorkerManager | undefined;
+
 async function main() {
   logger.info(
     {
@@ -19,7 +21,7 @@ async function main() {
     'Starting worker'
   );
 
-  const worker = new WorkerManager();
+  worker = new WorkerManager();
 
   // Start processing
   await worker.start();
@@ -30,14 +32,27 @@ async function main() {
 // Graceful shutdown
 let isShuttingDown = false;
 
+const GRACEFUL_TIMEOUT_MS = 5000;
+const HARD_TIMEOUT_MS = 10000;
+
 async function shutdown(signal: string) {
   if (isShuttingDown) return;
   isShuttingDown = true;
 
   logger.info({ signal }, 'Shutdown signal received');
 
-  // Give in-flight messages time to complete
-  await new Promise((resolve) => setTimeout(resolve, 5000));
+  // Hard timeout: force exit if graceful shutdown takes too long
+  const hardTimer = setTimeout(() => {
+    logger.error('Hard shutdown timeout reached, forcing exit');
+    process.exit(1);
+  }, HARD_TIMEOUT_MS);
+  hardTimer.unref();
+
+  // Stop accepting new messages, then wait for in-flight to finish
+  if (worker) {
+    await worker.stop();
+  }
+  await new Promise((resolve) => setTimeout(resolve, GRACEFUL_TIMEOUT_MS));
 
   logger.info('Worker shutdown complete');
   process.exit(0);

@@ -8,7 +8,7 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
-import { config, logger as baseLogger, isAppError } from '@multiregion/shared';
+import { config, isAppError } from '@multiregion/shared';
 
 import { healthRoutes } from './routes/health.js';
 import { orderRoutes } from './routes/orders.js';
@@ -37,9 +37,10 @@ export async function buildApp(): Promise<FastifyInstance> {
   // Plugins
   // ==========================================================================
 
-  // CORS
+  // CORS - restrict to configured origins (defaults to same-origin only in production)
+  const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS?.split(',') ?? [];
   await app.register(cors, {
-    origin: true,
+    origin: config.NODE_ENV === 'development' ? true : allowedOrigins,
     credentials: true,
   });
 
@@ -48,12 +49,15 @@ export async function buildApp(): Promise<FastifyInstance> {
     contentSecurityPolicy: false,
   });
 
-  // Rate limiting
+  // Rate limiting (exclude health endpoints used by ALB/probes)
   await app.register(rateLimit, {
     max: 100,
     timeWindow: '1 minute',
     keyGenerator: (request) => {
       return request.headers['x-forwarded-for']?.toString() ?? request.ip;
+    },
+    allowList: (request) => {
+      return request.url.startsWith('/health');
     },
   });
 

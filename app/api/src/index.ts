@@ -10,8 +10,10 @@ import { buildApp } from './app.js';
 
 const logger = createLogger('api');
 
+let app: Awaited<ReturnType<typeof buildApp>> | undefined;
+
 async function main() {
-  const app = await buildApp();
+  app = await buildApp();
 
   try {
     const address = await app.listen({
@@ -37,15 +39,28 @@ async function main() {
 }
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
-  logger.info('SIGTERM received, shutting down gracefully');
-  process.exit(0);
-});
+let isShuttingDown = false;
 
-process.on('SIGINT', () => {
-  logger.info('SIGINT received, shutting down gracefully');
-  process.exit(0);
-});
+async function shutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  logger.info({ signal }, 'Shutdown signal received');
+
+  try {
+    if (app) {
+      await app.close();
+    }
+    logger.info('Server closed, exiting');
+    process.exit(0);
+  } catch (error) {
+    logger.error({ error }, 'Error during shutdown');
+    process.exit(1);
+  }
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 // Unhandled errors
 process.on('unhandledRejection', (reason) => {

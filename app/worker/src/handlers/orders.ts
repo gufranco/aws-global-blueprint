@@ -14,8 +14,8 @@ import {
 
 const logger = createLogger('order-handler');
 
-// DynamoDB table name
-const ORDERS_TABLE = `${config.OTEL_SERVICE_NAME.replace('-app', '')}-${config.NODE_ENV}-orders`;
+// DynamoDB table name - use the same env var as the API service for consistency
+const ORDERS_TABLE = process.env.DYNAMODB_ORDERS_TABLE ?? `${config.PROJECT_NAME}-${config.NODE_ENV}-orders`;
 
 export async function processOrderMessage(message: Message): Promise<void> {
   if (!message.Body) {

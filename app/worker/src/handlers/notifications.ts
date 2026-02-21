@@ -11,6 +11,18 @@ import {
 
 const logger = createLogger('notification-handler');
 
+function maskEmail(email?: string): string {
+  if (!email) return '[none]';
+  const [local, domain] = email.split('@');
+  if (!local || !domain) return '***';
+  return `${local[0]}***@${domain}`;
+}
+
+function maskPhone(phone?: string): string {
+  if (!phone) return '[none]';
+  return `***${phone.slice(-4)}`;
+}
+
 export async function processNotificationMessage(message: Message): Promise<void> {
   if (!message.Body) {
     logger.warn({ messageId: message.MessageId }, 'Empty message body');
@@ -76,7 +88,7 @@ async function sendEmailNotification(event: NotificationEvent): Promise<void> {
   const { recipientId, recipientEmail, subject, body, templateId, templateData } = event.data;
 
   logger.info(
-    { recipientId, recipientEmail, subject, templateId },
+    { recipientId, email: maskEmail(recipientEmail), subject, templateId },
     'Sending email notification'
   );
 
@@ -94,7 +106,7 @@ async function sendEmailNotification(event: NotificationEvent): Promise<void> {
   //   },
   // }));
 
-  logger.info({ recipientId, recipientEmail }, 'Email notification sent (simulated)');
+  logger.info({ recipientId, email: maskEmail(recipientEmail) }, 'Email notification sent (simulated)');
 }
 
 // Send push notification
@@ -113,7 +125,7 @@ async function sendPushNotification(event: NotificationEvent): Promise<void> {
 async function sendSmsNotification(event: NotificationEvent): Promise<void> {
   const { recipientId, recipientPhone, body } = event.data;
 
-  logger.info({ recipientId, recipientPhone }, 'Sending SMS notification');
+  logger.info({ recipientId, phone: maskPhone(recipientPhone) }, 'Sending SMS notification');
 
   // In a real app, you'd integrate with SNS SMS, Twilio, etc.
   // For now, we just log
@@ -125,5 +137,5 @@ async function sendSmsNotification(event: NotificationEvent): Promise<void> {
   //   Message: body,
   // }));
 
-  logger.info({ recipientId, recipientPhone }, 'SMS notification sent (simulated)');
+  logger.info({ recipientId, phone: maskPhone(recipientPhone) }, 'SMS notification sent (simulated)');
 }

@@ -39,7 +39,10 @@ export const createOrderSchema = z.object({
     country: z.string().min(2).max(2),
     postalCode: z.string().min(1),
   }),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z
+    .record(z.unknown())
+    .refine((obj) => Object.keys(obj).length <= 50, 'metadata cannot have more than 50 keys')
+    .optional(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

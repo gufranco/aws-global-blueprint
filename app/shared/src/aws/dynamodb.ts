@@ -94,6 +94,8 @@ export async function updateItem<T>(
   updates: Record<string, unknown>,
   options?: {
     conditionExpression?: string;
+    conditionAttributeNames?: Record<string, string>;
+    conditionAttributeValues?: Record<string, unknown>;
     returnValues?: 'NONE' | 'ALL_OLD' | 'UPDATED_OLD' | 'ALL_NEW' | 'UPDATED_NEW';
   }
 ): Promise<T | null> {
@@ -110,6 +112,14 @@ export async function updateItem<T>(
     expressionAttributeNames[nameKey] = field;
     expressionAttributeValues[valueKey] = value;
     index++;
+  }
+
+  // Merge condition expression attributes if provided
+  if (options?.conditionAttributeNames) {
+    Object.assign(expressionAttributeNames, options.conditionAttributeNames);
+  }
+  if (options?.conditionAttributeValues) {
+    Object.assign(expressionAttributeValues, options.conditionAttributeValues);
   }
 
   const input: UpdateCommandInput = {

@@ -38,9 +38,12 @@ const envSchema = z.object({
   SNS_ORDER_TOPIC_ARN: z.string().optional(),
   SNS_NOTIFICATION_TOPIC_ARN: z.string().optional(),
 
-  // LocalStack
+  // LocalStack (must not be enabled in production)
   LOCALSTACK_ENDPOINT: z.string().optional(),
   USE_LOCALSTACK: z.coerce.boolean().default(false),
+
+  // CORS
+  CORS_ALLOWED_ORIGINS: z.string().optional(),
 
   // Tracing
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
@@ -61,7 +64,13 @@ function loadConfig(): Env {
     throw new Error('Invalid environment configuration');
   }
 
-  return result.data;
+  const data = result.data;
+
+  if (data.NODE_ENV === 'production' && data.USE_LOCALSTACK) {
+    throw new Error('USE_LOCALSTACK must not be enabled in production');
+  }
+
+  return data;
 }
 
 export const config = loadConfig();

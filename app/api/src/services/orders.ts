@@ -22,7 +22,10 @@ import {
 const logger = createLogger('orders');
 
 // DynamoDB table name
-const ORDERS_TABLE = process.env.DYNAMODB_ORDERS_TABLE ?? `multiregion-${config.NODE_ENV}-orders`;
+const ORDERS_TABLE = process.env.DYNAMODB_ORDERS_TABLE ?? `${config.PROJECT_NAME}-${config.NODE_ENV}-orders`;
+
+// DynamoDB key prefix for orders
+const ORDER_KEY_PREFIX = 'ORDER#';
 
 // Valid status transitions
 const STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
@@ -58,8 +61,8 @@ class OrderService {
 
     // DynamoDB item with composite keys (dates as ISO strings)
     const dynamoItem = {
-      pk: `ORDER#${orderId}`,
-      sk: `ORDER#${orderId}`,
+      pk: `${ORDER_KEY_PREFIX}${orderId}`,
+      sk: `${ORDER_KEY_PREFIX}${orderId}`,
       id: order.id,
       customerId: order.customerId,
       status: order.status,
@@ -77,15 +80,14 @@ class OrderService {
 
     logger.info({ orderId, customerId: input.customerId }, 'Order created');
 
-    // Publish order.created event
+    // Publish order.created event (non-blocking, but log failure prominently)
     try {
       await publishOrderEvent('order.created', orderId, input.customerId, {
         totalAmount,
         itemCount: input.items.length,
       });
     } catch (error) {
-      logger.error({ error, orderId }, 'Failed to publish order.created event');
-      // Don't fail the order creation if event publishing fails
+      logger.warn({ error, orderId }, 'Failed to publish order.created event, downstream processing may be delayed');
     }
 
     return order;
@@ -94,8 +96,8 @@ class OrderService {
   // Get order by ID
   async getOrder(orderId: string): Promise<Order> {
     const item = await getItem<Order & { pk: string; sk: string }>(ORDERS_TABLE, {
-      pk: `ORDER#${orderId}`,
-      sk: `ORDER#${orderId}`,
+      pk: `${ORDER_KEY_PREFIX}${orderId}`,
+      sk: `${ORDER_KEY_PREFIX}${orderId}`,
     });
 
     if (!item) {
@@ -145,7 +147,7 @@ class OrderService {
       const { items } = await queryItems<Order>(
         ORDERS_TABLE,
         'begins_with(pk, :pk)',
-        { ':pk': 'ORDER#' },
+        { ':pk': ORDER_KEY_PREFIX },
         { limit: limit + 1 }
       );
       result = { items };
@@ -189,24 +191,30 @@ class OrderService {
       );
     }
 
-    // Update in DynamoDB
+    // Update in DynamoDB with optimistic locking to prevent race conditions.
+    // The condition ensures the status hasn't changed since we read it.
     const now = new Date();
     const updated = await updateItem<Order>(
       ORDERS_TABLE,
-      { pk: `ORDER#${orderId}`, sk: `ORDER#${orderId}` },
-      { status: newStatus, updatedAt: now.toISOString() }
+      { pk: `${ORDER_KEY_PREFIX}${orderId}`, sk: `${ORDER_KEY_PREFIX}${orderId}` },
+      { status: newStatus, updatedAt: now.toISOString() },
+      {
+        conditionExpression: '#currentStatus = :expectedStatus',
+        conditionAttributeNames: { '#currentStatus': 'status' },
+        conditionAttributeValues: { ':expectedStatus': currentStatus },
+      }
     );
 
     logger.info({ orderId, previousStatus: currentStatus, newStatus }, 'Order status updated');
 
-    // Publish status change event
+    // Publish status change event (non-blocking)
     try {
       await publishOrderEvent(`order.${newStatus}` as 'order.confirmed', orderId, order.customerId, {
         previousStatus: currentStatus,
         status: newStatus,
       });
     } catch (error) {
-      logger.error({ error, orderId }, `Failed to publish order.${newStatus} event`);
+      logger.warn({ error, orderId }, `Failed to publish order.${newStatus} event, downstream processing may be delayed`);
     }
 
     return updated ?? { ...order, status: newStatus, updatedAt: now };
