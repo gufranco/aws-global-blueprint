@@ -5,7 +5,7 @@
 # DO NOT commit terraform.tfvars with sensitive data to version control.
 # =============================================================================
 
-project_name = "multiregion"
+project_name = "blueprint"
 environment  = "prod"
 
 # Domain configuration

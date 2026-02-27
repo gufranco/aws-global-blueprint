@@ -5,7 +5,7 @@
 // Load environment variables before anything else
 import 'dotenv/config';
 
-import { config, createLogger } from '@multiregion/shared';
+import { config, createLogger } from '@blueprint/shared';
 import { buildApp } from './app.js';
 
 const logger = createLogger('api');

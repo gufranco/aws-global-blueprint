@@ -10,7 +10,7 @@ All resources MUST have the following tags:
 
 | Tag Key | Description | Example Values |
 |---------|-------------|----------------|
-| `Project` | Project name | `multiregion` |
+| `Project` | Project name | `blueprint` |
 | `Environment` | Environment type | `dev`, `staging`, `prod` |
 | `ManagedBy` | Management tool | `terraform`, `manual` |
 | `Owner` | Team or person responsible | `platform-team`, `john.doe` |

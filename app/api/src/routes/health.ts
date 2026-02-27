@@ -3,7 +3,7 @@
 // =============================================================================
 
 import type { FastifyInstance } from 'fastify';
-import { config, checkSqsHealth, type HealthStatus } from '@multiregion/shared';
+import { config, checkSqsHealth, type HealthStatus } from '@blueprint/shared';
 import { checkDatabaseHealth, checkRedisHealth } from '../services/health.js';
 
 const startTime = Date.now();

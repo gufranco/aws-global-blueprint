@@ -7,7 +7,7 @@ import {
   type Message,
   type NotificationEvent,
   notificationEventSchema,
-} from '@multiregion/shared';
+} from '@blueprint/shared';
 
 const logger = createLogger('notification-handler');
 

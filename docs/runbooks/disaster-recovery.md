@@ -273,8 +273,8 @@ REGIONS=("us-east-1" "eu-west-1" "ap-northeast-1" "sa-east-1")
 for region in "${REGIONS[@]}"; do
   echo "Checking $region..."
   aws ecs describe-services \
-    --cluster multiregion-prod-${region}-cluster \
-    --services multiregion-prod-${region}-api \
+    --cluster blueprint-prod-${region}-cluster \
+    --services blueprint-prod-${region}-api \
     --region $region \
     --query 'services[0].runningCount'
 done
@@ -284,8 +284,8 @@ done
 ```bash
 #!/bin/bash
 REGION=${1:-us-east-1}
-CLUSTER="multiregion-prod-${REGION}-cluster"
-SERVICE="multiregion-prod-${REGION}-api"
+CLUSTER="blueprint-prod-${REGION}-cluster"
+SERVICE="blueprint-prod-${REGION}-api"
 
 aws ecs update-service \
   --cluster $CLUSTER \

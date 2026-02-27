@@ -17,7 +17,7 @@ import {
   type OrderStatus,
   type PaginationInput,
   type PaginatedResult,
-} from '@multiregion/shared';
+} from '@blueprint/shared';
 
 const logger = createLogger('orders');
 

@@ -32,6 +32,9 @@ importers:
 
   api:
     dependencies:
+      '@blueprint/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@fastify/cors':
         specifier: ^8.5.0
         version: 8.5.0
@@ -47,9 +50,6 @@ importers:
       '@fastify/swagger-ui':
         specifier: ^2.0.0
         version: 2.1.0
-      '@multiregion/shared':
-        specifier: workspace:*
-        version: link:../shared
       dotenv:
         specifier: ^17.2.3
         version: 17.2.3
@@ -169,7 +169,7 @@ importers:
 
   worker:
     dependencies:
-      '@multiregion/shared':
+      '@blueprint/shared':
         specifier: workspace:*
         version: link:../shared
       ioredis:

@@ -9,7 +9,7 @@ const envSchema = z.object({
   // Application
   NODE_ENV: z.enum(['development', 'staging', 'production']).default('development'),
   PORT: z.coerce.number().default(3000),
-  PROJECT_NAME: z.string().default('multiregion'),
+  PROJECT_NAME: z.string().default('blueprint'),
 
   // Region
   AWS_REGION: z.string().default('us-east-1'),
@@ -47,7 +47,7 @@ const envSchema = z.object({
 
   // Tracing
   OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
-  OTEL_SERVICE_NAME: z.string().default('multiregion-app'),
+  OTEL_SERVICE_NAME: z.string().default('blueprint-app'),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -86,13 +86,15 @@ export function getDatabaseUrl(): string {
     return config.DATABASE_URL;
   }
 
-  return `postgresql://${config.DATABASE_USER}:${config.DATABASE_PASSWORD}@${config.DATABASE_HOST}:${config.DATABASE_PORT}/${config.DATABASE_NAME}`;
+  const base = `postgresql://${config.DATABASE_USER}:${config.DATABASE_PASSWORD}@${config.DATABASE_HOST}:${config.DATABASE_PORT}/${config.DATABASE_NAME}`;
+  return config.USE_LOCALSTACK ? base : `${base}?sslmode=require`;
 }
 
 // Read replica URL (for secondary regions)
 export function getReadDatabaseUrl(): string {
   const host = config.DATABASE_READ_HOST ?? config.DATABASE_HOST;
-  return `postgresql://${config.DATABASE_USER}:${config.DATABASE_PASSWORD}@${host}:${config.DATABASE_PORT}/${config.DATABASE_NAME}`;
+  const base = `postgresql://${config.DATABASE_USER}:${config.DATABASE_PASSWORD}@${host}:${config.DATABASE_PORT}/${config.DATABASE_NAME}`;
+  return config.USE_LOCALSTACK ? base : `${base}?sslmode=require`;
 }
 
 // AWS endpoint configuration (for LocalStack)

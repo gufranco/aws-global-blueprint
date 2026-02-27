@@ -6,7 +6,7 @@
 set -euo pipefail
 
 REGION="me-south-1"
-PROJECT="multiregion"
+PROJECT="blueprint"
 ENV="dev"
 
 echo "=== Initializing LocalStack for $REGION ==="

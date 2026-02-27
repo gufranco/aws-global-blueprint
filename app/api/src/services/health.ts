@@ -4,7 +4,7 @@
 
 import { Pool } from 'pg';
 import Redis from 'ioredis';
-import { config, getDatabaseUrl, createLogger } from '@multiregion/shared';
+import { config, getDatabaseUrl, createLogger } from '@blueprint/shared';
 
 const logger = createLogger('health');
 

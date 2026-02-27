@@ -3,7 +3,7 @@
 // =============================================================================
 
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { config, ReadOnlyError } from '@multiregion/shared';
+import { config, ReadOnlyError } from '@blueprint/shared';
 
 // Extend FastifyRequest to include region info
 declare module 'fastify' {

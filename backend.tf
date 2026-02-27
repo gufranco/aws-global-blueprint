@@ -126,7 +126,7 @@ variable "create_state_bucket" {
 variable "project_name" {
   description = "Project name"
   type        = string
-  default     = "multiregion"
+  default     = "blueprint"
 }
 
 # -----------------------------------------------------------------------------

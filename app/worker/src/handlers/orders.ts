@@ -10,7 +10,7 @@ import {
   updateItem,
   config,
   publishNotification,
-} from '@multiregion/shared';
+} from '@blueprint/shared';
 
 const logger = createLogger('order-handler');
 

@@ -24,7 +24,7 @@ services:
 
   postgres:
     image: postgres:15-alpine
-    container_name: multiregion-postgres
+    container_name: blueprint-postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -44,11 +44,11 @@ services:
         limits:
           memory: 512M
     networks:
-      - multiregion
+      - blueprint
 
   redis:
     image: redis:7-alpine
-    container_name: multiregion-redis
+    container_name: blueprint-redis
     command: redis-server --appendonly yes
     ports:
       - "6380:6379"
@@ -64,7 +64,7 @@ services:
         limits:
           memory: 256M
     networks:
-      - multiregion
+      - blueprint
 
   # ===========================================================================
   # LocalStack Instances (one per region)
@@ -101,7 +101,7 @@ services:
         limits:
           memory: 2G
     networks:
-      - multiregion
+      - blueprint
     depends_on:
       postgres:
         condition: service_healthy
@@ -136,7 +136,7 @@ services:
         limits:
           memory: 1G
     networks:
-      - multiregion
+      - blueprint
     depends_on:
       - localstack-us-east-1
 
@@ -168,7 +168,7 @@ services:
         limits:
           memory: 1G
     networks:
-      - multiregion
+      - blueprint
     depends_on:
       - localstack-us-east-1
 
@@ -200,7 +200,7 @@ services:
         limits:
           memory: 1G
     networks:
-      - multiregion
+      - blueprint
     depends_on:
       - localstack-us-east-1
 
@@ -232,7 +232,7 @@ services:
         limits:
           memory: 1G
     networks:
-      - multiregion
+      - blueprint
     depends_on:
       - localstack-us-east-1
 
@@ -264,7 +264,7 @@ services:
         limits:
           memory: 1G
     networks:
-      - multiregion
+      - blueprint
     depends_on:
       - localstack-us-east-1
 
@@ -287,6 +287,6 @@ volumes:
 # =============================================================================
 
 networks:
-  multiregion:
+  blueprint:
     driver: bridge
-    name: multiregion-network
+    name: blueprint-network

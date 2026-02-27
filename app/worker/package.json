@@ -1,5 +1,5 @@
 {
-  "name": "@multiregion/worker",
+  "name": "@blueprint/worker",
   "version": "1.0.0",
   "private": true,
   "type": "module",
@@ -17,7 +17,7 @@
     "test:ci": "vitest run --coverage"
   },
   "dependencies": {
-    "@multiregion/shared": "workspace:*",
+    "@blueprint/shared": "workspace:*",
     "ioredis": "^5.3.0",
     "pg": "^8.11.0"
   },

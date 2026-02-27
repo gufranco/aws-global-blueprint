@@ -8,7 +8,7 @@ import {
   receiveMessages,
   deleteMessage,
   type Message,
-} from '@multiregion/shared';
+} from '@blueprint/shared';
 import { processOrderMessage } from './handlers/orders.js';
 import { processNotificationMessage } from './handlers/notifications.js';
 

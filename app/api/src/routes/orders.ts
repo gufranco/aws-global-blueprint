@@ -9,7 +9,7 @@ import {
   type CreateOrderInput,
   type Order,
   type PaginatedResult,
-} from '@multiregion/shared';
+} from '@blueprint/shared';
 import { orderService } from '../services/orders.js';
 
 export async function orderRoutes(app: FastifyInstance): Promise<void> {

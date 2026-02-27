@@ -2,7 +2,7 @@
 // Worker Entry Point
 // =============================================================================
 
-import { config, createLogger } from '@multiregion/shared';
+import { config, createLogger } from '@blueprint/shared';
 import { WorkerManager } from './worker.js';
 
 const logger = createLogger('worker');

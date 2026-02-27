@@ -5,7 +5,7 @@
 variable "project_name" {
   description = "Project name"
   type        = string
-  default     = "multiregion"
+  default     = "blueprint"
 }
 
 variable "environment" {
@@ -86,10 +86,16 @@ variable "aurora_engine_version" {
   default     = "15.4"
 }
 
-variable "aurora_instance_class" {
-  description = "Aurora instance class"
-  type        = string
-  default     = "db.r6g.large"
+variable "aurora_serverless_min_capacity" {
+  description = "Minimum ACU capacity for Aurora Serverless v2"
+  type        = number
+  default     = 2
+}
+
+variable "aurora_serverless_max_capacity" {
+  description = "Maximum ACU capacity for Aurora Serverless v2"
+  type        = number
+  default     = 64
 }
 
 variable "aurora_database_name" {

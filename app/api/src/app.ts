@@ -8,7 +8,7 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
-import { config, isAppError } from '@multiregion/shared';
+import { config, isAppError } from '@blueprint/shared';
 
 import { healthRoutes } from './routes/health.js';
 import { orderRoutes } from './routes/orders.js';

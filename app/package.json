@@ -1,8 +1,8 @@
 {
-  "name": "multiregion-app",
+  "name": "blueprint-app",
   "version": "1.0.0",
   "private": true,
-  "description": "Multi-region Node.js application with ECS Fargate, SQS, SNS, and Lambda",
+  "description": "Global blueprint Node.js application with ECS Fargate, SQS, SNS, and Lambda",
   "type": "module",
   "scripts": {
     "build": "pnpm -r build",
@@ -18,7 +18,7 @@
     "clean": "pnpm -r clean",
     "db:migrate": "cd api && pnpm db:migrate",
     "db:seed": "cd api && pnpm db:seed",
-    "docker:build": "docker build -t multiregion-api ./api && docker build -t multiregion-worker ./worker"
+    "docker:build": "docker build -t blueprint-api ./api && docker build -t blueprint-worker ./worker"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
