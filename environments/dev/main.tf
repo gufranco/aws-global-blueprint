@@ -162,6 +162,12 @@ module "region_us_east_1" {
   route53_zone_id                       = module.global.route53_zone_id
   domain_name                           = var.domain_name
 
+  database_endpoint      = module.data.rds_proxy_endpoint
+  database_read_endpoint = module.data.rds_proxy_read_only_endpoint
+  database_port          = 5432
+  database_name          = var.aurora_database_name
+  database_secret_arn    = module.data.aurora_master_secret_arn
+
   tags = var.tags
 }
 
@@ -181,11 +187,14 @@ module "data" {
   regions      = var.regions
 
   # Aurora configuration
-  aurora_engine_version      = var.aurora_engine_version
-  aurora_instance_class      = var.aurora_instance_class
-  aurora_database_name       = var.aurora_database_name
-  aurora_skip_final_snapshot = true  # Safe for dev
-  aurora_deletion_protection = false # Safe for dev
+  aurora_engine_version          = var.aurora_engine_version
+  aurora_serverless_min_capacity = var.aurora_serverless_min_capacity
+  aurora_serverless_max_capacity = var.aurora_serverless_max_capacity
+  aurora_database_name           = var.aurora_database_name
+  aurora_writer_count            = 1     # Single writer for dev
+  aurora_reader_count            = 0     # No readers for dev
+  aurora_skip_final_snapshot     = true  # Safe for dev
+  aurora_deletion_protection     = false # Safe for dev
 
   # DynamoDB configuration
   dynamodb_billing_mode = "PAY_PER_REQUEST"
@@ -239,8 +248,18 @@ output "region_us_east_1_alb_dns" {
 }
 
 output "aurora_endpoint" {
-  description = "Aurora primary endpoint"
+  description = "Aurora primary endpoint (direct, bypasses proxy)"
   value       = module.data.aurora_primary_endpoint
+}
+
+output "rds_proxy_endpoint" {
+  description = "RDS Proxy read/write endpoint"
+  value       = module.data.rds_proxy_endpoint
+}
+
+output "rds_proxy_read_only_endpoint" {
+  description = "RDS Proxy read-only endpoint"
+  value       = module.data.rds_proxy_read_only_endpoint
 }
 
 output "redis_endpoint" {

@@ -57,6 +57,25 @@ output "aurora_master_secret_name" {
 }
 
 # -----------------------------------------------------------------------------
+# RDS Proxy Outputs
+# -----------------------------------------------------------------------------
+
+output "rds_proxy_endpoint" {
+  description = "RDS Proxy read/write endpoint"
+  value       = aws_db_proxy.primary.endpoint
+}
+
+output "rds_proxy_read_only_endpoint" {
+  description = "RDS Proxy read-only endpoint"
+  value       = aws_db_proxy_endpoint.primary_read_only.endpoint
+}
+
+output "rds_proxy_arn" {
+  description = "RDS Proxy ARN"
+  value       = aws_db_proxy.primary.arn
+}
+
+# -----------------------------------------------------------------------------
 # DynamoDB Global Tables Outputs
 # -----------------------------------------------------------------------------
 
@@ -139,8 +158,8 @@ output "redis_configuration_endpoint" {
 # -----------------------------------------------------------------------------
 
 output "aurora_connection_string" {
-  description = "Aurora PostgreSQL connection string template"
-  value       = "postgresql://${var.aurora_master_username}:<password>@${aws_rds_cluster.primary.endpoint}:${aws_rds_cluster.primary.port}/${aws_rds_cluster.primary.database_name}"
+  description = "Aurora PostgreSQL connection string template (via RDS Proxy)"
+  value       = "postgresql://${var.aurora_master_username}:<password>@${aws_db_proxy.primary.endpoint}:${aws_rds_cluster.primary.port}/${aws_rds_cluster.primary.database_name}"
   sensitive   = true
 }
 

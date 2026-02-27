@@ -163,8 +163,8 @@ module "region_us_east_1" {
 
   global_accelerator_endpoint_group_arn = module.global.global_accelerator_endpoint_groups["us_east_1"]
 
-  database_endpoint      = module.data.aurora_primary_endpoint
-  database_read_endpoint = module.data.aurora_primary_reader_endpoint
+  database_endpoint      = module.data.rds_proxy_endpoint
+  database_read_endpoint = module.data.rds_proxy_read_only_endpoint
   database_port          = 5432
   database_name          = var.aurora_database_name
   database_secret_arn    = module.data.aurora_master_secret_arn
@@ -206,9 +206,9 @@ module "region_eu_west_1" {
 
   global_accelerator_endpoint_group_arn = module.global.global_accelerator_endpoint_groups["eu_west_1"]
 
-  # Read-only in secondary regions
-  database_endpoint      = module.data.aurora_primary_reader_endpoint
-  database_read_endpoint = module.data.aurora_primary_reader_endpoint
+  # Read-only via local replica proxy (avoids cross-region latency)
+  database_endpoint      = module.data_replica_eu_west_1[0].rds_proxy_endpoint
+  database_read_endpoint = module.data_replica_eu_west_1[0].rds_proxy_read_only_endpoint
   database_port          = 5432
   database_name          = var.aurora_database_name
   database_secret_arn    = module.data.aurora_master_secret_arn
@@ -250,8 +250,9 @@ module "region_ap_northeast_1" {
 
   global_accelerator_endpoint_group_arn = module.global.global_accelerator_endpoint_groups["ap_northeast_1"]
 
-  database_endpoint      = module.data.aurora_primary_reader_endpoint
-  database_read_endpoint = module.data.aurora_primary_reader_endpoint
+  # Read-only via local replica proxy
+  database_endpoint      = module.data_replica_ap_northeast_1[0].rds_proxy_endpoint
+  database_read_endpoint = module.data_replica_ap_northeast_1[0].rds_proxy_read_only_endpoint
   database_port          = 5432
   database_name          = var.aurora_database_name
   database_secret_arn    = module.data.aurora_master_secret_arn
@@ -293,8 +294,9 @@ module "region_sa_east_1" {
 
   global_accelerator_endpoint_group_arn = module.global.global_accelerator_endpoint_groups["sa_east_1"]
 
-  database_endpoint      = module.data.aurora_primary_reader_endpoint
-  database_read_endpoint = module.data.aurora_primary_reader_endpoint
+  # Read-only via local replica proxy
+  database_endpoint      = module.data_replica_sa_east_1[0].rds_proxy_endpoint
+  database_read_endpoint = module.data_replica_sa_east_1[0].rds_proxy_read_only_endpoint
   database_port          = 5432
   database_name          = var.aurora_database_name
   database_secret_arn    = module.data.aurora_master_secret_arn
@@ -317,11 +319,12 @@ module "data" {
   regions      = var.regions
 
   # Aurora configuration
-  aurora_engine_version      = var.aurora_engine_version
-  aurora_instance_class      = var.aurora_instance_class
-  aurora_database_name       = var.aurora_database_name
-  aurora_skip_final_snapshot = false
-  aurora_deletion_protection = true
+  aurora_engine_version          = var.aurora_engine_version
+  aurora_serverless_min_capacity = var.aurora_serverless_min_capacity
+  aurora_serverless_max_capacity = var.aurora_serverless_max_capacity
+  aurora_database_name           = var.aurora_database_name
+  aurora_skip_final_snapshot     = false
+  aurora_deletion_protection     = true
 
   # DynamoDB configuration
   dynamodb_billing_mode           = "PAY_PER_REQUEST"
@@ -367,6 +370,95 @@ module "data" {
 }
 
 # -----------------------------------------------------------------------------
+# Data Replicas (one per secondary region)
+# -----------------------------------------------------------------------------
+# Each replica deploys a local Aurora cluster + RDS Proxy, eliminating
+# cross-region latency for read queries in secondary regions.
+# The Secrets Manager secret is replicated via the primary data module.
+# -----------------------------------------------------------------------------
+
+module "data_replica_eu_west_1" {
+  source = "../../modules/data-replica"
+  count  = lookup(var.regions, "eu_west_1", { enabled = false }).enabled ? 1 : 0
+
+  providers = {
+    aws = aws.eu_west_1
+  }
+
+  project_name = var.project_name
+  environment  = var.environment
+  region_key   = "eu_west_1"
+  aws_region   = "eu-west-1"
+
+  global_cluster_identifier      = module.data.aurora_global_cluster_id
+  aurora_engine_version          = var.aurora_engine_version
+  aurora_serverless_min_capacity = var.aurora_serverless_min_capacity
+  aurora_serverless_max_capacity = var.aurora_serverless_max_capacity
+  aurora_reader_count            = 2
+  aurora_deletion_protection     = true
+  aurora_master_secret_name      = module.data.aurora_master_secret_name
+
+  private_subnet_ids         = module.region_eu_west_1[0].private_subnet_ids
+  database_security_group_id = module.region_eu_west_1[0].database_security_group_id
+
+  tags = var.tags
+}
+
+module "data_replica_ap_northeast_1" {
+  source = "../../modules/data-replica"
+  count  = lookup(var.regions, "ap_northeast_1", { enabled = false }).enabled ? 1 : 0
+
+  providers = {
+    aws = aws.ap_northeast_1
+  }
+
+  project_name = var.project_name
+  environment  = var.environment
+  region_key   = "ap_northeast_1"
+  aws_region   = "ap-northeast-1"
+
+  global_cluster_identifier      = module.data.aurora_global_cluster_id
+  aurora_engine_version          = var.aurora_engine_version
+  aurora_serverless_min_capacity = var.aurora_serverless_min_capacity
+  aurora_serverless_max_capacity = var.aurora_serverless_max_capacity
+  aurora_reader_count            = 2
+  aurora_deletion_protection     = true
+  aurora_master_secret_name      = module.data.aurora_master_secret_name
+
+  private_subnet_ids         = module.region_ap_northeast_1[0].private_subnet_ids
+  database_security_group_id = module.region_ap_northeast_1[0].database_security_group_id
+
+  tags = var.tags
+}
+
+module "data_replica_sa_east_1" {
+  source = "../../modules/data-replica"
+  count  = lookup(var.regions, "sa_east_1", { enabled = false }).enabled ? 1 : 0
+
+  providers = {
+    aws = aws.sa_east_1
+  }
+
+  project_name = var.project_name
+  environment  = var.environment
+  region_key   = "sa_east_1"
+  aws_region   = "sa-east-1"
+
+  global_cluster_identifier      = module.data.aurora_global_cluster_id
+  aurora_engine_version          = var.aurora_engine_version
+  aurora_serverless_min_capacity = var.aurora_serverless_min_capacity
+  aurora_serverless_max_capacity = var.aurora_serverless_max_capacity
+  aurora_reader_count            = 2
+  aurora_deletion_protection     = true
+  aurora_master_secret_name      = module.data.aurora_master_secret_name
+
+  private_subnet_ids         = module.region_sa_east_1[0].private_subnet_ids
+  database_security_group_id = module.region_sa_east_1[0].database_security_group_id
+
+  tags = var.tags
+}
+
+# -----------------------------------------------------------------------------
 # Outputs
 # -----------------------------------------------------------------------------
 
@@ -396,13 +488,23 @@ output "regional_alb_dns_names" {
 }
 
 output "aurora_endpoint" {
-  description = "Aurora primary endpoint"
+  description = "Aurora primary endpoint (direct, bypasses proxy)"
   value       = module.data.aurora_primary_endpoint
 }
 
 output "aurora_reader_endpoint" {
-  description = "Aurora reader endpoint"
+  description = "Aurora reader endpoint (direct, bypasses proxy)"
   value       = module.data.aurora_primary_reader_endpoint
+}
+
+output "rds_proxy_endpoint" {
+  description = "RDS Proxy read/write endpoint"
+  value       = module.data.rds_proxy_endpoint
+}
+
+output "rds_proxy_read_only_endpoint" {
+  description = "RDS Proxy read-only endpoint"
+  value       = module.data.rds_proxy_read_only_endpoint
 }
 
 output "redis_endpoint" {
@@ -416,5 +518,14 @@ output "dynamodb_tables" {
     sessions = module.data.dynamodb_sessions_table_name
     orders   = module.data.dynamodb_orders_table_name
     events   = module.data.dynamodb_events_table_name
+  }
+}
+
+output "aurora_replica_endpoints" {
+  description = "Aurora replica proxy endpoints per region"
+  value = {
+    eu_west_1      = length(module.data_replica_eu_west_1) > 0 ? module.data_replica_eu_west_1[0].rds_proxy_endpoint : ""
+    ap_northeast_1 = length(module.data_replica_ap_northeast_1) > 0 ? module.data_replica_ap_northeast_1[0].rds_proxy_endpoint : ""
+    sa_east_1      = length(module.data_replica_sa_east_1) > 0 ? module.data_replica_sa_east_1[0].rds_proxy_endpoint : ""
   }
 }

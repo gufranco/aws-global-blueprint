@@ -176,6 +176,17 @@ resource "aws_vpc_security_group_ingress_rule" "database_from_lambda" {
   tags = merge(local.common_tags, { Name = "${local.name_prefix}-db-from-lambda" })
 }
 
+resource "aws_vpc_security_group_ingress_rule" "database_self" {
+  security_group_id            = aws_security_group.database.id
+  description                  = "Self-referencing for RDS Proxy to Aurora"
+  from_port                    = var.database_port
+  to_port                      = var.database_port
+  ip_protocol                  = "tcp"
+  referenced_security_group_id = aws_security_group.database.id
+
+  tags = merge(local.common_tags, { Name = "${local.name_prefix}-db-self" })
+}
+
 # -----------------------------------------------------------------------------
 # Redis Security Group (for ElastiCache)
 # -----------------------------------------------------------------------------

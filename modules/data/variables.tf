@@ -36,16 +36,83 @@ variable "aurora_engine_version" {
   default     = "15.4"
 }
 
-variable "aurora_instance_class" {
-  description = "Aurora instance class"
-  type        = string
-  default     = "db.r6g.large"
-}
-
-variable "aurora_instances_per_cluster" {
-  description = "Number of instances per Aurora cluster"
+variable "aurora_serverless_min_capacity" {
+  description = "Minimum ACU capacity for Aurora Serverless v2 (0.5-128)"
   type        = number
   default     = 2
+
+  validation {
+    condition     = var.aurora_serverless_min_capacity >= 0.5 && var.aurora_serverless_min_capacity <= 128
+    error_message = "aurora_serverless_min_capacity must be between 0.5 and 128."
+  }
+}
+
+variable "aurora_serverless_max_capacity" {
+  description = "Maximum ACU capacity for Aurora Serverless v2 (1-128)"
+  type        = number
+  default     = 64
+
+  validation {
+    condition     = var.aurora_serverless_max_capacity >= 1 && var.aurora_serverless_max_capacity <= 128
+    error_message = "aurora_serverless_max_capacity must be between 1 and 128."
+  }
+}
+
+variable "aurora_writer_count" {
+  description = "Number of writer instances (promotion_tier 0)"
+  type        = number
+  default     = 2
+
+  validation {
+    condition     = var.aurora_writer_count >= 1 && var.aurora_writer_count <= 4
+    error_message = "aurora_writer_count must be between 1 and 4."
+  }
+}
+
+variable "aurora_reader_count" {
+  description = "Number of reader instances (promotion_tier 1)"
+  type        = number
+  default     = 2
+
+  validation {
+    condition     = var.aurora_reader_count >= 0 && var.aurora_reader_count <= 15
+    error_message = "aurora_reader_count must be between 0 and 15."
+  }
+}
+
+variable "rds_proxy_idle_client_timeout" {
+  description = "Idle client timeout for RDS Proxy in seconds"
+  type        = number
+  default     = 1800
+}
+
+variable "rds_proxy_iam_auth" {
+  description = "IAM authentication for client connections to RDS Proxy (DISABLED, ALLOWED, or REQUIRED). REQUIRED needs rds-db:connect on ECS task roles and IAM token generation in the app."
+  type        = string
+  default     = "DISABLED"
+
+  validation {
+    condition     = contains(["DISABLED", "ALLOWED", "REQUIRED"], var.rds_proxy_iam_auth)
+    error_message = "rds_proxy_iam_auth must be DISABLED, ALLOWED, or REQUIRED."
+  }
+}
+
+variable "rds_proxy_connection_borrow_timeout" {
+  description = "Max seconds to wait for an available connection from the pool before failing"
+  type        = number
+  default     = 10
+}
+
+variable "aurora_acu_alarm_threshold" {
+  description = "ACU utilization percentage threshold for CloudWatch alarm"
+  type        = number
+  default     = 80
+}
+
+variable "alarm_sns_topic_arn" {
+  description = "SNS topic ARN for CloudWatch alarm notifications (empty to skip alarm creation)"
+  type        = string
+  default     = ""
 }
 
 variable "aurora_database_name" {
