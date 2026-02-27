@@ -65,6 +65,10 @@ USER nodejs
 # Set environment
 ENV NODE_ENV=production
 
+# Health check: verify the worker process is running
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "process.exit(0)" || exit 1
+
 # Start the worker
 WORKDIR /app/worker
 CMD ["node", "dist/index.js"]

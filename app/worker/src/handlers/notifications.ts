@@ -4,6 +4,7 @@
 
 import {
   createLogger,
+  CURRENT_SCHEMA_VERSION,
   type Message,
   type NotificationEvent,
   notificationEventSchema,
@@ -39,7 +40,8 @@ export async function processNotificationMessage(message: Message): Promise<void
       eventData = body;
     }
   } catch (error) {
-    logger.error({ error, body: message.Body }, 'Failed to parse message body');
+    // Parse failures are permanent: retrying won't fix malformed JSON
+    logger.error({ error, body: message.Body }, 'Failed to parse notification message body');
     throw error;
   }
 
@@ -54,6 +56,15 @@ export async function processNotificationMessage(message: Message): Promise<void
   }
 
   const event = parseResult.data;
+
+  const majorVersion = (event.schemaVersion ?? '1.0').split('.')[0];
+  if (majorVersion !== CURRENT_SCHEMA_VERSION.split('.')[0]) {
+    logger.error(
+      { schemaVersion: event.schemaVersion, expected: CURRENT_SCHEMA_VERSION },
+      'Incompatible event schema version, skipping'
+    );
+    return;
+  }
 
   logger.info(
     {

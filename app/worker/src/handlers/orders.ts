@@ -4,18 +4,16 @@
 
 import {
   createLogger,
+  isTransient,
+  TransientError,
+  CURRENT_SCHEMA_VERSION,
   type Message,
   type OrderEvent,
   orderEventSchema,
-  updateItem,
-  config,
   publishNotification,
 } from '@blueprint/shared';
 
 const logger = createLogger('order-handler');
-
-// DynamoDB table name - use the same env var as the API service for consistency
-const ORDERS_TABLE = process.env.DYNAMODB_ORDERS_TABLE ?? `${config.PROJECT_NAME}-${config.NODE_ENV}-orders`;
 
 export async function processOrderMessage(message: Message): Promise<void> {
   if (!message.Body) {
@@ -35,6 +33,7 @@ export async function processOrderMessage(message: Message): Promise<void> {
     }
   } catch (error) {
     logger.error({ error, body: message.Body }, 'Failed to parse message body');
+    // Parse failures are permanent: retrying won't fix malformed JSON
     throw error;
   }
 
@@ -49,6 +48,16 @@ export async function processOrderMessage(message: Message): Promise<void> {
   }
 
   const event = parseResult.data;
+
+  // Reject events from incompatible future schema versions
+  const majorVersion = (event.schemaVersion ?? '1.0').split('.')[0];
+  if (majorVersion !== CURRENT_SCHEMA_VERSION.split('.')[0]) {
+    logger.error(
+      { schemaVersion: event.schemaVersion, expected: CURRENT_SCHEMA_VERSION },
+      'Incompatible event schema version, skipping'
+    );
+    return;
+  }
 
   logger.info(
     {
@@ -97,7 +106,6 @@ async function handleOrderCreated(event: OrderEvent): Promise<void> {
 
   logger.info({ orderId, customerId }, 'Processing order.created');
 
-  // Example: Send confirmation notification
   try {
     await publishNotification(
       'notification.email',
@@ -110,8 +118,12 @@ async function handleOrderCreated(event: OrderEvent): Promise<void> {
       }
     );
   } catch (error) {
-    logger.error({ error, orderId }, 'Failed to send order confirmation notification');
-    // Don't fail the handler - notification is non-critical
+    if (isTransient(error)) {
+      logger.warn({ error, orderId }, 'Transient failure sending order confirmation, will retry');
+      throw new TransientError('Failed to send order confirmation notification');
+    }
+    // Permanent notification failures are non-critical, log and continue
+    logger.error({ error, orderId }, 'Permanent failure sending order confirmation notification');
   }
 }
 
@@ -131,7 +143,6 @@ async function handleOrderProcessing(event: OrderEvent): Promise<void> {
 
   logger.info({ orderId, customerId }, 'Processing order.processing');
 
-  // Example: Notify customer that order is being prepared
   try {
     await publishNotification(
       'notification.email',
@@ -144,7 +155,11 @@ async function handleOrderProcessing(event: OrderEvent): Promise<void> {
       }
     );
   } catch (error) {
-    logger.error({ error, orderId }, 'Failed to send processing notification');
+    if (isTransient(error)) {
+      logger.warn({ error, orderId }, 'Transient failure sending processing notification');
+      throw new TransientError('Failed to send processing notification');
+    }
+    logger.error({ error, orderId }, 'Permanent failure sending processing notification');
   }
 }
 
@@ -154,7 +169,6 @@ async function handleOrderShipped(event: OrderEvent): Promise<void> {
 
   logger.info({ orderId, customerId }, 'Processing order.shipped');
 
-  // Example: Send shipping notification with tracking info
   try {
     await publishNotification(
       'notification.email',
@@ -165,13 +179,16 @@ async function handleOrderShipped(event: OrderEvent): Promise<void> {
         templateId: 'order-shipped',
         templateData: {
           orderId,
-          // In real app, you'd include tracking number and carrier
           trackingUrl: `https://example.com/track/${orderId}`,
         },
       }
     );
   } catch (error) {
-    logger.error({ error, orderId }, 'Failed to send shipping notification');
+    if (isTransient(error)) {
+      logger.warn({ error, orderId }, 'Transient failure sending shipping notification');
+      throw new TransientError('Failed to send shipping notification');
+    }
+    logger.error({ error, orderId }, 'Permanent failure sending shipping notification');
   }
 }
 
@@ -181,7 +198,6 @@ async function handleOrderDelivered(event: OrderEvent): Promise<void> {
 
   logger.info({ orderId, customerId }, 'Processing order.delivered');
 
-  // Example: Send delivery confirmation and request feedback
   try {
     await publishNotification(
       'notification.email',
@@ -197,7 +213,11 @@ async function handleOrderDelivered(event: OrderEvent): Promise<void> {
       }
     );
   } catch (error) {
-    logger.error({ error, orderId }, 'Failed to send delivery notification');
+    if (isTransient(error)) {
+      logger.warn({ error, orderId }, 'Transient failure sending delivery notification');
+      throw new TransientError('Failed to send delivery notification');
+    }
+    logger.error({ error, orderId }, 'Permanent failure sending delivery notification');
   }
 }
 
@@ -206,9 +226,6 @@ async function handleOrderCancelled(event: OrderEvent): Promise<void> {
   const { orderId, customerId } = event.data;
 
   logger.info({ orderId, customerId }, 'Processing order.cancelled');
-
-  // Example: Refund processing, inventory restoration, etc.
-  // In a real app, you'd integrate with payment and inventory systems
 
   try {
     await publishNotification(
@@ -222,6 +239,10 @@ async function handleOrderCancelled(event: OrderEvent): Promise<void> {
       }
     );
   } catch (error) {
-    logger.error({ error, orderId }, 'Failed to send cancellation notification');
+    if (isTransient(error)) {
+      logger.warn({ error, orderId }, 'Transient failure sending cancellation notification');
+      throw new TransientError('Failed to send cancellation notification');
+    }
+    logger.error({ error, orderId }, 'Permanent failure sending cancellation notification');
   }
 }
