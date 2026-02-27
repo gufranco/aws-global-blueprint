@@ -19,6 +19,21 @@ export const OrderStatus = {
 
 export type OrderStatus = (typeof OrderStatus)[keyof typeof OrderStatus];
 
+// Single source of truth for the order status state machine.
+// Both the service layer and tests should reference this map.
+export const ORDER_STATUS_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+  pending: ['confirmed', 'cancelled'],
+  confirmed: ['processing', 'cancelled'],
+  processing: ['shipped', 'cancelled'],
+  shipped: ['delivered'],
+  delivered: [],
+  cancelled: [],
+} as const;
+
+export function isValidStatusTransition(from: OrderStatus, to: OrderStatus): boolean {
+  return ORDER_STATUS_TRANSITIONS[from]?.includes(to) ?? false;
+}
+
 export const orderItemSchema = z.object({
   productId: z.string().uuid(),
   productName: z.string().min(1),
@@ -77,9 +92,12 @@ export const eventTypeSchema = z.enum([
 
 export type EventType = z.infer<typeof eventTypeSchema>;
 
+export const CURRENT_SCHEMA_VERSION = '1.0';
+
 export const baseEventSchema = z.object({
   id: z.string().uuid(),
   type: eventTypeSchema,
+  schemaVersion: z.string().default(CURRENT_SCHEMA_VERSION),
   timestamp: z.coerce.date(),
   source: z.string(),
   region: z.string(),
@@ -178,5 +196,22 @@ export interface PaginatedResult<T> {
     totalPages: number;
     hasNext: boolean;
     hasPrev: boolean;
+  };
+}
+
+// Cursor-based pagination (preferred for DynamoDB)
+export const cursorPaginationSchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().positive().max(100).default(20),
+});
+
+export type CursorPaginationInput = z.infer<typeof cursorPaginationSchema>;
+
+export interface CursorPaginatedResult<T> {
+  data: T[];
+  pagination: {
+    nextCursor: string | null;
+    hasMore: boolean;
+    limit: number;
   };
 }

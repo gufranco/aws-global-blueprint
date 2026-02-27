@@ -88,3 +88,60 @@ export class ServiceUnavailableError extends AppError {
 export function isAppError(error: unknown): error is AppError {
   return error instanceof AppError;
 }
+
+// =============================================================================
+// Error Classification
+// =============================================================================
+
+export class TransientError extends AppError {
+  constructor(message: string, details?: Record<string, unknown>) {
+    super(message, 'TRANSIENT_ERROR', 503, details);
+    this.name = 'TransientError';
+  }
+}
+
+export class PermanentError extends AppError {
+  constructor(message: string, statusCode = 400, details?: Record<string, unknown>) {
+    super(message, 'PERMANENT_ERROR', statusCode, details);
+    this.name = 'PermanentError';
+  }
+}
+
+const TRANSIENT_ERROR_CODES = new Set([
+  'ThrottlingException',
+  'ProvisionedThroughputExceededException',
+  'RequestLimitExceeded',
+  'TooManyRequestsException',
+  'ServiceUnavailable',
+  'InternalServerError',
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'EPIPE',
+  'EAI_AGAIN',
+]);
+
+const TRANSIENT_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
+
+export function isTransient(error: unknown): boolean {
+  if (error instanceof TransientError) return true;
+  if (error instanceof PermanentError) return false;
+  if (error instanceof ValidationError) return false;
+  if (error instanceof NotFoundError) return false;
+  if (error instanceof UnauthorizedError) return false;
+  if (error instanceof ForbiddenError) return false;
+
+  if (error instanceof Error) {
+    const name = (error as { name?: string }).name ?? '';
+    if (TRANSIENT_ERROR_CODES.has(name)) return true;
+
+    const statusCode = (error as { $metadata?: { httpStatusCode?: number } }).$metadata
+      ?.httpStatusCode;
+    if (statusCode && TRANSIENT_STATUS_CODES.has(statusCode)) return true;
+
+    const code = (error as { code?: string }).code;
+    if (code && TRANSIENT_ERROR_CODES.has(code)) return true;
+  }
+
+  return false;
+}

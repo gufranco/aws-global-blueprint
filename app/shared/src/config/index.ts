@@ -42,6 +42,12 @@ const envSchema = z.object({
   LOCALSTACK_ENDPOINT: z.string().optional(),
   USE_LOCALSTACK: z.coerce.boolean().default(false),
 
+  // DynamoDB tables
+  DYNAMODB_ORDERS_TABLE: z.string().optional(),
+
+  // Authentication
+  API_KEY: z.string().optional(),
+
   // CORS
   CORS_ALLOWED_ORIGINS: z.string().optional(),
 

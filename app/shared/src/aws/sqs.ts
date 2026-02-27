@@ -20,10 +20,11 @@ import { createLogger } from '../logger.js';
 
 const logger = createLogger('sqs');
 
-// Create SQS client
+// Create SQS client with explicit retry config
 const endpoint = getAwsEndpoint();
 export const sqsClient = new SQSClient({
   region: config.AWS_REGION,
+  maxAttempts: 3,
   ...(endpoint && { endpoint }),
   ...(config.USE_LOCALSTACK && {
     credentials: {
@@ -32,6 +33,8 @@ export const sqsClient = new SQSClient({
     },
   }),
 });
+
+const SEND_TIMEOUT_MS = 5000;
 
 // Send message to queue
 export async function sendMessage(
@@ -56,7 +59,9 @@ export async function sendMessage(
   logger.debug({ queueUrl, body }, 'Sending SQS message');
 
   const command = new SendMessageCommand(input);
-  const response = await sqsClient.send(command);
+  const response = await sqsClient.send(command, {
+    abortSignal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+  });
 
   logger.info({ queueUrl, messageId: response.MessageId }, 'SQS message sent');
 
@@ -81,8 +86,12 @@ export async function receiveMessages(
     AttributeNames: ['All'],
   };
 
+  // Receive timeout must account for long polling wait time
+  const receiveTimeout = ((options?.waitTimeSeconds ?? 20) + 5) * 1000;
   const command = new ReceiveMessageCommand(input);
-  const response = await sqsClient.send(command);
+  const response = await sqsClient.send(command, {
+    abortSignal: AbortSignal.timeout(receiveTimeout),
+  });
 
   return response.Messages ?? [];
 }
@@ -94,7 +103,9 @@ export async function deleteMessage(queueUrl: string, receiptHandle: string): Pr
     ReceiptHandle: receiptHandle,
   });
 
-  await sqsClient.send(command);
+  await sqsClient.send(command, {
+    abortSignal: AbortSignal.timeout(SEND_TIMEOUT_MS),
+  });
   logger.debug({ queueUrl }, 'SQS message deleted');
 }
 

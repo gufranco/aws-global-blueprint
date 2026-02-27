@@ -10,14 +10,15 @@ import {
 } from '@aws-sdk/client-sns';
 import { config, getAwsEndpoint } from '../config/index.js';
 import { createLogger } from '../logger.js';
-import type { EventType } from '../types.js';
+import { CURRENT_SCHEMA_VERSION, type EventType } from '../types.js';
 
 const logger = createLogger('sns');
 
-// Create SNS client
+// Create SNS client with explicit retry config
 const endpoint = getAwsEndpoint();
 export const snsClient = new SNSClient({
   region: config.AWS_REGION,
+  maxAttempts: 3,
   ...(endpoint && { endpoint }),
   ...(config.USE_LOCALSTACK && {
     credentials: {
@@ -26,6 +27,8 @@ export const snsClient = new SNSClient({
     },
   }),
 });
+
+const PUBLISH_TIMEOUT_MS = 5000;
 
 // Publish message to topic
 export async function publishMessage(
@@ -50,7 +53,9 @@ export async function publishMessage(
   logger.debug({ topicArn, message }, 'Publishing SNS message');
 
   const command = new PublishCommand(input);
-  const response = await snsClient.send(command);
+  const response = await snsClient.send(command, {
+    abortSignal: AbortSignal.timeout(PUBLISH_TIMEOUT_MS),
+  });
 
   logger.info({ topicArn, messageId: response.MessageId }, 'SNS message published');
 
@@ -67,6 +72,7 @@ export async function publishEvent(
   const event = {
     id: crypto.randomUUID(),
     type: eventType,
+    schemaVersion: CURRENT_SCHEMA_VERSION,
     timestamp: new Date().toISOString(),
     source: config.OTEL_SERVICE_NAME,
     region: config.AWS_REGION,
@@ -89,7 +95,8 @@ export async function publishOrderEvent(
   eventType: EventType,
   orderId: string,
   customerId: string,
-  additionalData?: Record<string, unknown>
+  additionalData?: Record<string, unknown>,
+  correlationId?: string
 ): Promise<string> {
   const topicArn = config.SNS_ORDER_TOPIC_ARN;
   if (!topicArn) {
@@ -100,7 +107,7 @@ export async function publishOrderEvent(
     orderId,
     customerId,
     ...additionalData,
-  });
+  }, correlationId);
 }
 
 // Publish notification event

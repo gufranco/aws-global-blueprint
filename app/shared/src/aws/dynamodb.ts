@@ -11,6 +11,7 @@ import {
   DeleteCommand,
   QueryCommand,
   ScanCommand,
+  TransactWriteCommand,
   type GetCommandInput,
   type PutCommandInput,
   type UpdateCommandInput,
@@ -23,10 +24,13 @@ import { createLogger } from '../logger.js';
 
 const logger = createLogger('dynamodb');
 
-// Create DynamoDB client
+// Create DynamoDB client with explicit retry and timeout config
 const endpoint = getAwsEndpoint();
+const DYNAMODB_MAX_ATTEMPTS = 3;
+
 const dynamoClient = new DynamoDBClient({
   region: config.AWS_REGION,
+  maxAttempts: DYNAMODB_MAX_ATTEMPTS,
   ...(endpoint && { endpoint }),
   ...(config.USE_LOCALSTACK && {
     credentials: {
@@ -35,6 +39,8 @@ const dynamoClient = new DynamoDBClient({
     },
   }),
 });
+
+const REQUEST_TIMEOUT_MS = 5000;
 
 // Document client with marshalling
 export const dynamoDb = DynamoDBDocumentClient.from(dynamoClient, {
@@ -58,7 +64,9 @@ export async function getItem<T>(
   };
 
   const command = new GetCommand(input);
-  const response = await dynamoDb.send(command);
+  const response = await dynamoDb.send(command, {
+    abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
 
   return (response.Item as T) ?? null;
 }
@@ -82,7 +90,9 @@ export async function putItem<T extends Record<string, unknown>>(
   };
 
   const command = new PutCommand(input);
-  await dynamoDb.send(command);
+  await dynamoDb.send(command, {
+    abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
 
   logger.debug({ tableName, item }, 'DynamoDB item put');
 }
@@ -133,7 +143,9 @@ export async function updateItem<T>(
   };
 
   const command = new UpdateCommand(input);
-  const response = await dynamoDb.send(command);
+  const response = await dynamoDb.send(command, {
+    abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
 
   return (response.Attributes as T) ?? null;
 }
@@ -153,7 +165,9 @@ export async function deleteItem(
   };
 
   const command = new DeleteCommand(input);
-  await dynamoDb.send(command);
+  await dynamoDb.send(command, {
+    abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
 
   logger.debug({ tableName, key }, 'DynamoDB item deleted');
 }
@@ -185,7 +199,9 @@ export async function queryItems<T>(
   };
 
   const command = new QueryCommand(input);
-  const response = await dynamoDb.send(command);
+  const response = await dynamoDb.send(command, {
+    abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
 
   const result: { items: T[]; lastKey?: Record<string, unknown> } = {
     items: (response.Items as T[]) ?? [],
@@ -194,6 +210,75 @@ export async function queryItems<T>(
     result.lastKey = response.LastEvaluatedKey;
   }
   return result;
+}
+
+// Transact write items (atomic multi-item writes)
+export interface TransactWriteItem {
+  put?: {
+    tableName: string;
+    item: Record<string, unknown>;
+    conditionExpression?: string;
+    expressionAttributeNames?: Record<string, string>;
+    expressionAttributeValues?: Record<string, unknown>;
+  };
+  update?: {
+    tableName: string;
+    key: Record<string, unknown>;
+    updateExpression: string;
+    conditionExpression?: string;
+    expressionAttributeNames?: Record<string, string>;
+    expressionAttributeValues?: Record<string, unknown>;
+  };
+  delete?: {
+    tableName: string;
+    key: Record<string, unknown>;
+    conditionExpression?: string;
+  };
+}
+
+export async function transactWriteItems(items: TransactWriteItem[]): Promise<void> {
+  const transactItems = items.map((item) => {
+    if (item.put) {
+      return {
+        Put: {
+          TableName: item.put.tableName,
+          Item: item.put.item,
+          ConditionExpression: item.put.conditionExpression,
+          ExpressionAttributeNames: item.put.expressionAttributeNames,
+          ExpressionAttributeValues: item.put.expressionAttributeValues,
+        },
+      };
+    }
+    if (item.update) {
+      return {
+        Update: {
+          TableName: item.update.tableName,
+          Key: item.update.key,
+          UpdateExpression: item.update.updateExpression,
+          ConditionExpression: item.update.conditionExpression,
+          ExpressionAttributeNames: item.update.expressionAttributeNames,
+          ExpressionAttributeValues: item.update.expressionAttributeValues,
+        },
+      };
+    }
+    if (item.delete) {
+      return {
+        Delete: {
+          TableName: item.delete.tableName,
+          Key: item.delete.key,
+          ConditionExpression: item.delete.conditionExpression,
+        },
+      };
+    }
+    throw new Error('TransactWriteItem must have put, update, or delete');
+  });
+
+  const command = new TransactWriteCommand({ TransactItems: transactItems });
+  await dynamoDb.send(command, {
+    abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
+
+  logger.debug({ itemCount: items.length }, 'DynamoDB transaction committed');
 }
 
 // Scan items (use sparingly)
@@ -217,7 +302,9 @@ export async function scanItems<T>(
   };
 
   const command = new ScanCommand(input);
-  const response = await dynamoDb.send(command);
+  const response = await dynamoDb.send(command, {
+    abortSignal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
 
   const result: { items: T[]; lastKey?: Record<string, unknown> } = {
     items: (response.Items as T[]) ?? [],
