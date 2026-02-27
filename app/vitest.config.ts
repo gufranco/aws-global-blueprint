@@ -1,10 +1,19 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      '@blueprint/shared': path.resolve(__dirname, 'shared/dist/index.js'),
+    },
+  },
   test: {
     globals: true,
     environment: 'node',
     passWithNoTests: true,
+    env: {
+      NODE_ENV: 'development',
+    },
     include: ['**/*.test.ts'],
     coverage: {
       provider: 'v8',
