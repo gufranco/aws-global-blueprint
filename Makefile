@@ -4,6 +4,9 @@
 # Configuration
 # =============================================================================
 
+# IaC tool: terraform or tofu (override with: make plan TOOL=tofu)
+TOOL ?= terraform
+
 # Docker context (override with: make localstack-up DOCKER_CONTEXT=colima-personal)
 DOCKER_CONTEXT ?= default
 
@@ -14,58 +17,59 @@ ENV ?= dev
 REGION ?= us-east-1
 
 help: ## Show this help message
-	@echo 'Usage: make [target] [ENV=dev] [REGION=us-east-1] [DOCKER_CONTEXT=default]'
+	@echo 'Usage: make [target] [TOOL=terraform] [ENV=dev] [REGION=us-east-1] [DOCKER_CONTEXT=default]'
 	@echo ''
 	@echo 'Available targets:'
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-30s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ''
 	@echo 'Variables:'
+	@echo '  TOOL=$(TOOL) (default: terraform, options: terraform, tofu)'
 	@echo '  ENV=$(ENV) (default: dev, options: dev, staging, prod)'
 	@echo '  REGION=$(REGION) (default: us-east-1)'
 	@echo '  DOCKER_CONTEXT=$(DOCKER_CONTEXT) (default: default)'
 
 # =============================================================================
-# Terraform - Environments
+# IaC - Environments (use TOOL=tofu for OpenTofu)
 # =============================================================================
 
-init: ## Initialize Terraform for current environment
-	cd environments/$(ENV) && terraform init
+init: ## Initialize IaC for current environment
+	cd environments/$(ENV) && $(TOOL) init
 
-plan: ## Plan Terraform changes for current environment
-	cd environments/$(ENV) && terraform plan
+plan: ## Plan IaC changes for current environment
+	cd environments/$(ENV) && $(TOOL) plan
 
-apply: ## Apply Terraform changes for current environment
-	cd environments/$(ENV) && terraform apply
+apply: ## Apply IaC changes for current environment
+	cd environments/$(ENV) && $(TOOL) apply
 
 destroy: ## Destroy infrastructure for current environment
-	cd environments/$(ENV) && terraform destroy
+	cd environments/$(ENV) && $(TOOL) destroy
 
-output: ## Show Terraform outputs for current environment
-	cd environments/$(ENV) && terraform output
+output: ## Show IaC outputs for current environment
+	cd environments/$(ENV) && $(TOOL) output
 
 # =============================================================================
-# Terraform - Module Operations
+# IaC - Module Operations
 # =============================================================================
 
-init-modules: ## Initialize all Terraform modules
+init-modules: ## Initialize all IaC modules
 	@for dir in modules/global modules/region modules/data modules/data-replica modules/security modules/compliance modules/observability modules/resilience modules/finops; do \
 		echo "Initializing $$dir..."; \
-		(cd $$dir && terraform init -backend=false) || exit 1; \
+		(cd $$dir && $(TOOL) init -backend=false) || exit 1; \
 	done
-	@echo "All modules initialized successfully"
+	@echo "All modules initialized successfully ($(TOOL))"
 
-validate-modules: ## Validate all Terraform modules
+validate-modules: ## Validate all IaC modules
 	@for dir in modules/global modules/region modules/data modules/data-replica modules/security modules/compliance modules/observability modules/resilience modules/finops; do \
 		echo "Validating $$dir..."; \
-		(cd $$dir && terraform validate) || exit 1; \
+		(cd $$dir && $(TOOL) validate) || exit 1; \
 	done
-	@echo "All modules valid"
+	@echo "All modules valid ($(TOOL))"
 
-fmt: ## Format all Terraform files
-	terraform fmt -recursive
+fmt: ## Format all Terraform/OpenTofu files
+	$(TOOL) fmt -recursive
 
-fmt-check: ## Check Terraform formatting
-	terraform fmt -recursive -check
+fmt-check: ## Check Terraform/OpenTofu formatting
+	$(TOOL) fmt -recursive -check
 
 # =============================================================================
 # LocalStack - Multi-Region
@@ -262,7 +266,7 @@ test-load: ## Run load tests with k6
 # =============================================================================
 
 ci-lint: ## Run linters
-	terraform fmt -recursive -check
+	$(TOOL) fmt -recursive -check
 	cd app && pnpm lint
 
 ci-test: ## Run tests for CI

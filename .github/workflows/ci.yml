@@ -19,10 +19,10 @@ concurrency:
 
 jobs:
 
-  # ─── Terraform Format ────────────────────────────────────────────────────
+  # ─── IaC Format ─────────────────────────────────────────────────────────
 
-  terraform-fmt:
-    name: Terraform Format
+  iac-fmt:
+    name: IaC Format
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -35,26 +35,44 @@ jobs:
       - name: Check formatting
         run: terraform fmt -recursive -check
 
-  # ─── Terraform Validate ──────────────────────────────────────────────────
+  # ─── IaC Validate (Terraform + OpenTofu) ───────────────────────────────
 
-  terraform-validate:
-    name: Terraform Validate
+  iac-validate:
+    name: Validate (${{ matrix.tool }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - tool: terraform
+            version: "1.5.7"
+          - tool: opentofu
+            version: "1.9.0"
     steps:
       - uses: actions/checkout@v4
 
-      - uses: hashicorp/setup-terraform@v3
+      - name: Setup Terraform
+        if: matrix.tool == 'terraform'
+        uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: "1.5.7"
+          terraform_version: ${{ matrix.version }}
           terraform_wrapper: false
+
+      - name: Setup OpenTofu
+        if: matrix.tool == 'opentofu'
+        uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_version: ${{ matrix.version }}
+          tofu_wrapper: false
 
       - name: Validate all modules
         run: |
+          TOOL="${{ matrix.tool == 'opentofu' && 'tofu' || 'terraform' }}"
           for dir in modules/*/; do
-            echo "::group::Validating $dir"
+            echo "::group::Validating $dir with $TOOL"
             cd "$dir"
-            terraform init -backend=false -input=false
-            terraform validate
+            $TOOL init -backend=false -input=false
+            $TOOL validate
             cd "$GITHUB_WORKSPACE"
             echo "::endgroup::"
           done
@@ -230,8 +248,8 @@ jobs:
     name: CI Pass
     if: always()
     needs:
-      - terraform-fmt
-      - terraform-validate
+      - iac-fmt
+      - iac-validate
       - terraform-security
       - app-build
       - app-lint
@@ -242,8 +260,8 @@ jobs:
     steps:
       - name: Check all jobs
         run: |
-          echo "Terraform Format: ${{ needs.terraform-fmt.result }}"
-          echo "Terraform Validate: ${{ needs.terraform-validate.result }}"
+          echo "IaC Format: ${{ needs.iac-fmt.result }}"
+          echo "IaC Validate: ${{ needs.iac-validate.result }}"
           echo "Terraform Security: ${{ needs.terraform-security.result }}"
           echo "App Build: ${{ needs.app-build.result }}"
           echo "App Lint: ${{ needs.app-lint.result }}"
@@ -253,8 +271,8 @@ jobs:
 
           # Fail if any required job failed
           # terraform-security and security-audit are advisory (continue-on-error)
-          if [[ "${{ needs.terraform-fmt.result }}" == "failure" ]] || \
-             [[ "${{ needs.terraform-validate.result }}" == "failure" ]] || \
+          if [[ "${{ needs.iac-fmt.result }}" == "failure" ]] || \
+             [[ "${{ needs.iac-validate.result }}" == "failure" ]] || \
              [[ "${{ needs.app-build.result }}" == "failure" ]] || \
              [[ "${{ needs.app-lint.result }}" == "failure" ]] || \
              [[ "${{ needs.app-test.result }}" == "failure" ]] || \

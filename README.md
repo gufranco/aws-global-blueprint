@@ -1,6 +1,7 @@
 # AWS Global Blueprint
 
 [![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.5-844FBA?logo=terraform&logoColor=white)](#prerequisites)
+[![OpenTofu](https://img.shields.io/badge/OpenTofu-%3E%3D1.6-FFDA18?logo=opentofu&logoColor=black)](#prerequisites)
 [![AWS](https://img.shields.io/badge/AWS-6%2B_Regions-FF9900?logo=amazonwebservices&logoColor=white)](#supported-aws-regions)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-3178C6?logo=typescript&logoColor=white)](#)
 [![ECS Fargate](https://img.shields.io/badge/ECS-Fargate-FF9900?logo=amazonecs&logoColor=white)](#)
@@ -318,7 +319,7 @@ aws-global-blueprint/
 
 | Tool | Version | Purpose |
 |------|---------|---------|
-| Terraform | >= 1.6 | Infrastructure as Code |
+| Terraform or OpenTofu | >= 1.5 / >= 1.6 | Infrastructure as Code |
 | Node.js | 20 | Application runtime |
 | pnpm | >= 8 | Package manager |
 | Docker | Latest | LocalStack and containers |
@@ -408,21 +409,21 @@ terraform apply tfplan
 
 ## Development Commands
 
-Run `make help` to see all available targets.
+Run `make help` to see all available targets. All IaC commands support `TOOL=tofu` for OpenTofu: `make plan TOOL=tofu`.
 
 ### Infrastructure
 
 | Command | Description |
 |---------|-------------|
-| `make init` | Initialize Terraform for current environment |
-| `make plan` | Plan Terraform changes |
-| `make apply` | Apply Terraform changes |
+| `make init` | Initialize IaC for current environment |
+| `make plan` | Plan IaC changes |
+| `make apply` | Apply IaC changes |
 | `make destroy` | Destroy infrastructure for current environment |
-| `make output` | Show Terraform outputs |
-| `make fmt` | Format all Terraform files |
-| `make fmt-check` | Check Terraform formatting |
-| `make init-modules` | Initialize all Terraform modules |
-| `make validate-modules` | Validate all Terraform modules |
+| `make output` | Show IaC outputs |
+| `make fmt` | Format all Terraform/OpenTofu files |
+| `make fmt-check` | Check Terraform/OpenTofu formatting |
+| `make init-modules` | Initialize all IaC modules |
+| `make validate-modules` | Validate all IaC modules |
 
 ### LocalStack
 
