@@ -141,7 +141,7 @@ export async function publishNotification(
 }
 
 // Check if SNS is healthy
-export async function checkSnsHealth(): Promise<boolean> {
+export function checkSnsHealth(): boolean {
   try {
     // Simple check - we can't easily check topic without publishing
     return true;

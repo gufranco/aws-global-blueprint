@@ -120,7 +120,7 @@ export async function buildApp(): Promise<FastifyInstance> {
 
   // Include requestId in every response for traceability
   app.addHook('onSend', (_request, reply, payload, done) => {
-    reply.header('x-request-id', _request.id);
+    void reply.header('x-request-id', _request.id);
     done(null, payload);
   });
 

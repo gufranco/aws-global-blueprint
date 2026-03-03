@@ -8,7 +8,6 @@ import {
   NotFoundError,
   ValidationError,
   ConflictError,
-  putItem,
   getItem,
   queryItems,
   updateItem,
@@ -200,8 +199,8 @@ class OrderService {
     logger.info({ orderId, customerId: input.customerId, correlationId }, 'Order created');
 
     // Track business metrics
-    BusinessMetrics.orderCreated(input.customerId);
-    BusinessMetrics.orderValue(totalAmount);
+    void BusinessMetrics.orderCreated(input.customerId);
+    void BusinessMetrics.orderValue(totalAmount);
 
     // Best-effort publish via circuit breaker. If SNS is degraded, the outbox handles delivery.
     try {
@@ -244,7 +243,7 @@ class OrderService {
       throw new NotFoundError('Order', orderId);
     }
 
-    const { pk, sk, ...order } = item;
+    const { pk: _pk, sk: _sk, ...order } = item;
 
     // Populate cache for subsequent reads
     await cacheSet(`${CACHE_PREFIX}${orderId}`, order, CACHE_TTL_SECONDS);
@@ -439,7 +438,7 @@ class OrderService {
 
   async cancelOrder(orderId: string): Promise<Order> {
     const result = await this.updateOrderStatus(orderId, 'cancelled');
-    BusinessMetrics.orderCancelled(orderId, 'customer_request');
+    void BusinessMetrics.orderCancelled(orderId, 'customer_request');
     return result;
   }
 }

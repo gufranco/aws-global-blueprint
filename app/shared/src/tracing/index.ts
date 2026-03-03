@@ -61,6 +61,7 @@ export function initTracing(): void {
   // Start the SDK
   sdk.start();
 
+  // eslint-disable-next-line no-console -- startup log before logger is available
   console.log('OpenTelemetry tracing initialized');
 }
 

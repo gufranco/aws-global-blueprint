@@ -59,8 +59,8 @@ async function shutdown(signal: string) {
   }
 }
 
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));
 
 // Unhandled errors
 process.on('unhandledRejection', (reason) => {
@@ -72,4 +72,4 @@ process.on('uncaughtException', (error) => {
   process.exit(1);
 });
 
-main();
+void main();

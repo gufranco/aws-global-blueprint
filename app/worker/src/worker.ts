@@ -103,10 +103,10 @@ export class WorkerManager {
     logger.info({ queues: enabledQueues.map((q) => q.name) }, 'Starting queue polling');
 
     for (const queue of enabledQueues) {
-      this.pollQueue(queue);
+      void this.pollQueue(queue);
     }
 
-    this.startOutboxSweeper();
+    void this.startOutboxSweeper();
   }
 
   async stop(): Promise<void> {
@@ -160,10 +160,10 @@ export class WorkerManager {
 
     // Report batch-level metrics
     if (succeeded > 0) {
-      BusinessMetrics.messagesProcessed(queue.name, succeeded);
+      void BusinessMetrics.messagesProcessed(queue.name, succeeded);
     }
     if (failed > 0) {
-      BusinessMetrics.messagesFailed(queue.name, failed);
+      void BusinessMetrics.messagesFailed(queue.name, failed);
       logger.warn({ queue: queue.name, succeeded, failed }, 'Some messages failed processing');
     }
   }

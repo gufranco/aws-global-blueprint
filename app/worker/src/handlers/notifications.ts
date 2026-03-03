@@ -96,7 +96,14 @@ export async function processNotificationMessage(message: Message): Promise<void
 
 // Send email notification
 async function sendEmailNotification(event: NotificationEvent): Promise<void> {
-  const { recipientId, recipientEmail, subject, body, templateId, templateData } = event.data;
+  const {
+    recipientId,
+    recipientEmail,
+    subject,
+    body: _body,
+    templateId,
+    templateData: _templateData,
+  } = event.data;
 
   logger.info(
     { recipientId, email: maskEmail(recipientEmail), subject, templateId },
@@ -125,7 +132,7 @@ async function sendEmailNotification(event: NotificationEvent): Promise<void> {
 
 // Send push notification
 async function sendPushNotification(event: NotificationEvent): Promise<void> {
-  const { recipientId, body, templateId, templateData } = event.data;
+  const { recipientId, body: _body, templateId, templateData: _templateData } = event.data;
 
   logger.info({ recipientId, templateId }, 'Sending push notification');
 
@@ -137,7 +144,7 @@ async function sendPushNotification(event: NotificationEvent): Promise<void> {
 
 // Send SMS notification
 async function sendSmsNotification(event: NotificationEvent): Promise<void> {
-  const { recipientId, recipientPhone, body } = event.data;
+  const { recipientId, recipientPhone, body: _body } = event.data;
 
   logger.info({ recipientId, phone: maskPhone(recipientPhone) }, 'Sending SMS notification');
 
