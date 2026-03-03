@@ -183,29 +183,32 @@ export const BusinessMetrics = {
 };
 
 // =============================================================================
-// Metrics Middleware for Fastify
+// Metrics Hooks for Fastify
 // =============================================================================
 
-export function createMetricsMiddleware() {
-  return async (
-    request: { method: string; url: string },
-    reply: { statusCode: number },
-    done: () => void,
-  ) => {
-    const start = Date.now();
+// Attach a start timestamp before the request is processed.
+// Use as: fastify.addHook('onRequest', metricsOnRequest)
+export function metricsOnRequest(
+  request: { method: string; url: string; startTime?: number },
+  _reply: unknown,
+  done: () => void,
+): void {
+  request.startTime = Date.now();
+  done();
+}
 
-    // Wait for response to finish
-    done();
+// Measure the full request duration after the response is sent.
+// Use as: fastify.addHook('onResponse', metricsOnResponse)
+export async function metricsOnResponse(
+  request: { method: string; url: string; startTime?: number },
+  reply: { statusCode: number },
+): Promise<void> {
+  const duration = request.startTime ? Date.now() - request.startTime : 0;
+  const endpoint = request.url.split('?')[0] ?? request.url;
 
-    const duration = Date.now() - start;
-    const endpoint = request.url.split('?')[0] ?? request.url;
+  await BusinessMetrics.requestLatency(endpoint, request.method, duration);
 
-    // Publish latency metric
-    await BusinessMetrics.requestLatency(endpoint, request.method, duration);
-
-    // Publish error metric if applicable
-    if (reply.statusCode >= 400) {
-      await BusinessMetrics.requestError(endpoint, request.method, reply.statusCode);
-    }
-  };
+  if (reply.statusCode >= 400) {
+    await BusinessMetrics.requestError(endpoint, request.method, reply.statusCode);
+  }
 }

@@ -9,25 +9,25 @@ const envSchema = z.object({
   // Application
   NODE_ENV: z.enum(['development', 'staging', 'production']).default('development'),
   PORT: z.coerce.number().default(3000),
-  PROJECT_NAME: z.string().default('blueprint'),
+  PROJECT_NAME: z.string().min(1).default('blueprint'),
 
   // Region
-  AWS_REGION: z.string().default('us-east-1'),
-  REGION_KEY: z.string().default('us_east_1'),
+  AWS_REGION: z.string().min(1).default('us-east-1'),
+  REGION_KEY: z.string().min(1).default('us_east_1'),
   IS_PRIMARY_REGION: z.coerce.boolean().default(true),
   REGION_TIER: z.enum(['primary', 'secondary', 'tertiary']).default('primary'),
 
   // Database
-  DATABASE_HOST: z.string().default('localhost'),
-  DATABASE_READ_HOST: z.string().optional(),
+  DATABASE_HOST: z.string().min(1).default('localhost'),
+  DATABASE_READ_HOST: z.string().min(1).optional(),
   DATABASE_PORT: z.coerce.number().default(5432),
-  DATABASE_NAME: z.string().default('app'),
-  DATABASE_USER: z.string().default('postgres'),
-  DATABASE_PASSWORD: z.string().default('postgres'),
+  DATABASE_NAME: z.string().min(1).default('app'),
+  DATABASE_USER: z.string().min(1).default('postgres'),
+  DATABASE_PASSWORD: z.string().min(1).default('postgres'),
   DATABASE_URL: z.string().optional(),
 
   // Redis
-  REDIS_HOST: z.string().default('localhost'),
+  REDIS_HOST: z.string().min(1).default('localhost'),
   REDIS_PORT: z.coerce.number().default(6379),
   REDIS_PASSWORD: z.string().optional(),
 
@@ -45,8 +45,8 @@ const envSchema = z.object({
   // DynamoDB tables
   DYNAMODB_ORDERS_TABLE: z.string().optional(),
 
-  // Authentication
-  API_KEY: z.string().optional(),
+  // Authentication (must be non-empty when set)
+  API_KEY: z.string().min(1).optional(),
 
   // CORS
   CORS_ALLOWED_ORIGINS: z.string().optional(),
@@ -74,6 +74,10 @@ function loadConfig(): Env {
 
   if (data.NODE_ENV === 'production' && data.USE_LOCALSTACK) {
     throw new Error('USE_LOCALSTACK must not be enabled in production');
+  }
+
+  if (data.NODE_ENV === 'production' && !data.API_KEY) {
+    throw new Error('API_KEY must be configured in production');
   }
 
   return data;

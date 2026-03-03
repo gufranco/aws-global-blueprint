@@ -53,7 +53,8 @@ export async function processDlqMessage(message: Message): Promise<void> {
     logger.warn({ messageId: message.MessageId }, 'Could not parse DLQ message body');
   }
 
-  // Persist for investigation and replay
+  // Persist for investigation and replay. If this fails, the message
+  // stays in the DLQ for redelivery instead of being silently lost.
   const now = new Date();
   await putItem(ORDERS_TABLE, {
     pk: `${DLQ_KEY_PREFIX}${message.MessageId ?? now.toISOString()}`,
@@ -69,7 +70,5 @@ export async function processDlqMessage(message: Message): Promise<void> {
     receivedAt: now.toISOString(),
     replayedAt: null,
     ttl: Math.floor(now.getTime() / 1000) + DLQ_RETENTION_DAYS * 86400,
-  }).catch((err) => {
-    logger.error({ err, messageId: message.MessageId }, 'Failed to persist DLQ message');
   });
 }

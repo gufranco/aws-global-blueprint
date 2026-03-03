@@ -49,7 +49,7 @@ class Semaphore {
     const next = this.waiting.shift();
     if (next) {
       next();
-    } else {
+    } else if (this.current > 0) {
       this.current--;
     }
   }
