@@ -78,7 +78,7 @@ resource "aws_vpc_security_group_egress_rule" "ecs_api_to_internet" {
   security_group_id = aws_security_group.ecs_api.id
   description       = "To internet (via NAT)"
   ip_protocol       = "-1"
-  cidr_ipv4         = "0.0.0.0/0"
+  cidr_ipv4         = "0.0.0.0/0" #trivy:ignore:AVD-AWS-0104 -- private subnet, routed through NAT gateway
 
   tags = merge(local.common_tags, { Name = "${local.name_prefix}-ecs-to-internet" })
 }
@@ -101,7 +101,7 @@ resource "aws_vpc_security_group_egress_rule" "ecs_worker_to_internet" {
   security_group_id = aws_security_group.ecs_worker.id
   description       = "To internet (via NAT)"
   ip_protocol       = "-1"
-  cidr_ipv4         = "0.0.0.0/0"
+  cidr_ipv4         = "0.0.0.0/0" #trivy:ignore:AVD-AWS-0104 -- private subnet, routed through NAT gateway
 
   tags = merge(local.common_tags, { Name = "${local.name_prefix}-worker-to-internet" })
 }
@@ -124,7 +124,7 @@ resource "aws_vpc_security_group_egress_rule" "lambda_to_internet" {
   security_group_id = aws_security_group.lambda.id
   description       = "To internet (via NAT)"
   ip_protocol       = "-1"
-  cidr_ipv4         = "0.0.0.0/0"
+  cidr_ipv4         = "0.0.0.0/0" #trivy:ignore:AVD-AWS-0104 -- private subnet, routed through NAT gateway
 
   tags = merge(local.common_tags, { Name = "${local.name_prefix}-lambda-to-internet" })
 }

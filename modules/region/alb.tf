@@ -70,6 +70,7 @@ resource "aws_lb_target_group" "api" {
 # When a certificate is provided, redirects HTTP to HTTPS.
 # When no certificate is provided, forwards HTTP traffic directly.
 
+#trivy:ignore:AVD-AWS-0054 -- redirects to HTTPS when certificate is present; HTTP-only for dev without cert
 resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.main.arn
   port              = 80
