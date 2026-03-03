@@ -30,7 +30,7 @@ async function main() {
         tier: config.REGION_TIER,
         env: config.NODE_ENV,
       },
-      'API server started'
+      'API server started',
     );
   } catch (error) {
     logger.fatal({ error }, 'Failed to start server');

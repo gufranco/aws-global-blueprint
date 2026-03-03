@@ -100,10 +100,7 @@ export class WorkerManager {
       return;
     }
 
-    logger.info(
-      { queues: enabledQueues.map((q) => q.name) },
-      'Starting queue polling'
-    );
+    logger.info({ queues: enabledQueues.map((q) => q.name) }, 'Starting queue polling');
 
     for (const queue of enabledQueues) {
       this.pollQueue(queue);
@@ -145,10 +142,7 @@ export class WorkerManager {
       return;
     }
 
-    logger.debug(
-      { queue: queue.name, count: messages.length },
-      'Received messages'
-    );
+    logger.debug({ queue: queue.name, count: messages.length }, 'Received messages');
 
     const results = await Promise.allSettled(
       messages.map(async (message) => {
@@ -158,7 +152,7 @@ export class WorkerManager {
         } finally {
           this.semaphore.release();
         }
-      })
+      }),
     );
 
     const succeeded = results.filter((r) => r.status === 'fulfilled').length;
@@ -170,17 +164,11 @@ export class WorkerManager {
     }
     if (failed > 0) {
       BusinessMetrics.messagesFailed(queue.name, failed);
-      logger.warn(
-        { queue: queue.name, succeeded, failed },
-        'Some messages failed processing'
-      );
+      logger.warn({ queue: queue.name, succeeded, failed }, 'Some messages failed processing');
     }
   }
 
-  private async processMessage(
-    queue: QueueConfig,
-    message: Message
-  ): Promise<void> {
+  private async processMessage(queue: QueueConfig, message: Message): Promise<void> {
     const messageId = message.MessageId;
     const startTime = Date.now();
 
@@ -189,15 +177,19 @@ export class WorkerManager {
       // prevents a concurrent worker from processing the same message.
       if (messageId) {
         try {
-          await putItem(ORDERS_TABLE, {
-            pk: `${DEDUP_KEY_PREFIX}${messageId}`,
-            sk: `${DEDUP_KEY_PREFIX}${messageId}`,
-            startedAt: new Date().toISOString(),
-            queue: queue.name,
-            ttl: Math.floor(Date.now() / 1000) + DEDUP_TTL_SECONDS,
-          }, {
-            conditionExpression: 'attribute_not_exists(pk)',
-          });
+          await putItem(
+            ORDERS_TABLE,
+            {
+              pk: `${DEDUP_KEY_PREFIX}${messageId}`,
+              sk: `${DEDUP_KEY_PREFIX}${messageId}`,
+              startedAt: new Date().toISOString(),
+              queue: queue.name,
+              ttl: Math.floor(Date.now() / 1000) + DEDUP_TTL_SECONDS,
+            },
+            {
+              conditionExpression: 'attribute_not_exists(pk)',
+            },
+          );
         } catch (err) {
           if ((err as { name?: string }).name === 'ConditionalCheckFailedException') {
             logger.info({ messageId, queue: queue.name }, 'Duplicate message, skipping');
@@ -218,22 +210,19 @@ export class WorkerManager {
       }
 
       const duration = Date.now() - startTime;
-      logger.info(
-        { messageId, queue: queue.name, duration },
-        'Message processed successfully'
-      );
+      logger.info({ messageId, queue: queue.name, duration }, 'Message processed successfully');
     } catch (error) {
       const duration = Date.now() - startTime;
 
       if (isTransient(error)) {
         logger.warn(
           { error, messageId, queue: queue.name, duration },
-          'Transient failure processing message, will retry via SQS'
+          'Transient failure processing message, will retry via SQS',
         );
       } else {
         logger.error(
           { error, messageId, queue: queue.name, duration },
-          'Permanent failure processing message'
+          'Permanent failure processing message',
         );
       }
 

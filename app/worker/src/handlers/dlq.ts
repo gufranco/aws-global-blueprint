@@ -2,13 +2,7 @@
 // Dead Letter Queue Handler
 // =============================================================================
 
-import {
-  config,
-  createLogger,
-  publishMetric,
-  putItem,
-  type Message,
-} from '@blueprint/shared';
+import { config, createLogger, publishMetric, putItem, type Message } from '@blueprint/shared';
 
 const logger = createLogger('dlq-handler');
 
@@ -29,7 +23,7 @@ export async function processDlqMessage(message: Message): Promise<void> {
       messageAttributes: message.MessageAttributes,
       receiveCount,
     },
-    'DLQ message received: exhausted all retries'
+    'DLQ message received: exhausted all retries',
   );
 
   // Publish alert metric so CloudWatch alarms fire
@@ -54,10 +48,7 @@ export async function processDlqMessage(message: Message): Promise<void> {
     correlationId = eventData.correlationId;
     orderId = eventData.data?.orderId;
 
-    logger.error(
-      { eventType, eventId, correlationId, orderId },
-      'DLQ message event details'
-    );
+    logger.error({ eventType, eventId, correlationId, orderId }, 'DLQ message event details');
   } catch {
     logger.warn({ messageId: message.MessageId }, 'Could not parse DLQ message body');
   }

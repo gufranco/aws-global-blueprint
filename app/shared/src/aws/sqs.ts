@@ -45,7 +45,7 @@ export async function sendMessage(
     messageGroupId?: string;
     deduplicationId?: string;
     messageAttributes?: Record<string, { DataType: string; StringValue: string }>;
-  }
+  },
 ): Promise<string> {
   const input: SendMessageCommandInput = {
     QueueUrl: queueUrl,
@@ -75,7 +75,7 @@ export async function receiveMessages(
     maxMessages?: number;
     waitTimeSeconds?: number;
     visibilityTimeout?: number;
-  }
+  },
 ): Promise<Message[]> {
   const input: ReceiveMessageCommandInput = {
     QueueUrl: queueUrl,

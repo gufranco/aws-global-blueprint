@@ -18,7 +18,7 @@ async function main() {
       tier: config.REGION_TIER,
       env: config.NODE_ENV,
     },
-    'Starting worker'
+    'Starting worker',
   );
 
   worker = new WorkerManager();

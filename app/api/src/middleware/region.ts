@@ -23,7 +23,7 @@ const WRITE_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
 
 export async function regionMiddleware(
   request: FastifyRequest,
-  _reply: FastifyReply
+  _reply: FastifyReply,
 ): Promise<void> {
   // Attach region info to request
   request.region = {

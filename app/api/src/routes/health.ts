@@ -47,7 +47,7 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
       };
 
       return reply.send(status);
-    }
+    },
   );
 
   // Detailed health check (for monitoring)
@@ -125,7 +125,7 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
       // Return 503 if unhealthy
       const statusCode = overallStatus === 'unhealthy' ? 503 : 200;
       return reply.status(statusCode).send(status);
-    }
+    },
   );
 
   // Liveness probe (for Kubernetes/ECS)
@@ -148,7 +148,7 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
     },
     async (_request, reply) => {
       return reply.send({ status: 'ok' });
-    }
+    },
   );
 
   // Readiness probe (for Kubernetes/ECS)
@@ -178,6 +178,6 @@ export async function healthRoutes(app: FastifyInstance): Promise<void> {
       }
 
       return reply.send({ status: 'ready' });
-    }
+    },
   );
 }

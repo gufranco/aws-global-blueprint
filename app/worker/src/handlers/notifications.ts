@@ -50,7 +50,7 @@ export async function processNotificationMessage(message: Message): Promise<void
   if (!parseResult.success) {
     logger.error(
       { errors: parseResult.error.errors, event: eventData },
-      'Invalid notification event'
+      'Invalid notification event',
     );
     throw new Error('Invalid notification event format');
   }
@@ -61,7 +61,7 @@ export async function processNotificationMessage(message: Message): Promise<void
   if (majorVersion !== CURRENT_SCHEMA_VERSION.split('.')[0]) {
     logger.error(
       { schemaVersion: event.schemaVersion, expected: CURRENT_SCHEMA_VERSION },
-      'Incompatible event schema version, skipping'
+      'Incompatible event schema version, skipping',
     );
     return;
   }
@@ -72,7 +72,7 @@ export async function processNotificationMessage(message: Message): Promise<void
       eventType: event.type,
       recipientId: event.data.recipientId,
     },
-    'Processing notification event'
+    'Processing notification event',
   );
 
   // Handle different notification types
@@ -100,12 +100,12 @@ async function sendEmailNotification(event: NotificationEvent): Promise<void> {
 
   logger.info(
     { recipientId, email: maskEmail(recipientEmail), subject, templateId },
-    'Sending email notification'
+    'Sending email notification',
   );
 
   // In a real app, you'd integrate with SES, SendGrid, etc.
   // For now, we just log
-  
+
   // Example SES integration:
   // const sesClient = new SESClient({ region: config.AWS_REGION });
   // await sesClient.send(new SendEmailCommand({
@@ -117,7 +117,10 @@ async function sendEmailNotification(event: NotificationEvent): Promise<void> {
   //   },
   // }));
 
-  logger.info({ recipientId, email: maskEmail(recipientEmail) }, 'Email notification sent (simulated)');
+  logger.info(
+    { recipientId, email: maskEmail(recipientEmail) },
+    'Email notification sent (simulated)',
+  );
 }
 
 // Send push notification
@@ -148,5 +151,8 @@ async function sendSmsNotification(event: NotificationEvent): Promise<void> {
   //   Message: body,
   // }));
 
-  logger.info({ recipientId, phone: maskPhone(recipientPhone) }, 'SMS notification sent (simulated)');
+  logger.info(
+    { recipientId, phone: maskPhone(recipientPhone) },
+    'SMS notification sent (simulated)',
+  );
 }

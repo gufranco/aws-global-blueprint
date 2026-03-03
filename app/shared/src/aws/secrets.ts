@@ -65,7 +65,7 @@ export async function getSecret(secretId: string, useCache = true): Promise<stri
 // Get secret as JSON
 export async function getSecretJson<T = Record<string, unknown>>(
   secretId: string,
-  useCache = true
+  useCache = true,
 ): Promise<T> {
   const value = await getSecret(secretId, useCache);
   return JSON.parse(value) as T;

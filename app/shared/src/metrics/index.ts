@@ -10,13 +10,14 @@ const logger = createLogger('metrics');
 
 const cloudwatchClient = new CloudWatchClient({
   region: config.AWS_REGION,
-  ...(config.USE_LOCALSTACK && config.LOCALSTACK_ENDPOINT && {
-    endpoint: config.LOCALSTACK_ENDPOINT,
-    credentials: {
-      accessKeyId: 'test',
-      secretAccessKey: 'test',
-    },
-  }),
+  ...(config.USE_LOCALSTACK &&
+    config.LOCALSTACK_ENDPOINT && {
+      endpoint: config.LOCALSTACK_ENDPOINT,
+      credentials: {
+        accessKeyId: 'test',
+        secretAccessKey: 'test',
+      },
+    }),
 });
 
 const NAMESPACE = `${config.PROJECT_NAME || 'MultiRegion'}/${config.NODE_ENV}`;
@@ -53,7 +54,7 @@ export async function publishMetric(metric: MetricData): Promise<void> {
             Timestamp: new Date(),
           },
         ],
-      })
+      }),
     );
   } catch (error) {
     logger.error({ error, metric }, 'Failed to publish metric');
@@ -78,7 +79,7 @@ export async function publishMetrics(metrics: MetricData[]): Promise<void> {
           Dimensions: [...defaultDimensions, ...(metric.dimensions ?? [])],
           Timestamp: new Date(),
         })),
-      })
+      }),
     );
   } catch (error) {
     logger.error({ error, metricsCount: metrics.length }, 'Failed to publish metrics');
@@ -167,7 +168,12 @@ export const BusinessMetrics = {
     }),
 
   // Custom generic metric
-  custom: (name: string, value: number, unit?: MetricData['unit'], dimensions?: MetricDimension[]) =>
+  custom: (
+    name: string,
+    value: number,
+    unit?: MetricData['unit'],
+    dimensions?: MetricDimension[],
+  ) =>
     publishMetric({
       metricName: name,
       value,
@@ -181,18 +187,22 @@ export const BusinessMetrics = {
 // =============================================================================
 
 export function createMetricsMiddleware() {
-  return async (request: { method: string; url: string }, reply: { statusCode: number }, done: () => void) => {
+  return async (
+    request: { method: string; url: string },
+    reply: { statusCode: number },
+    done: () => void,
+  ) => {
     const start = Date.now();
-    
+
     // Wait for response to finish
     done();
-    
+
     const duration = Date.now() - start;
     const endpoint = request.url.split('?')[0] ?? request.url;
-    
+
     // Publish latency metric
     await BusinessMetrics.requestLatency(endpoint, request.method, duration);
-    
+
     // Publish error metric if applicable
     if (reply.statusCode >= 400) {
       await BusinessMetrics.requestError(endpoint, request.method, reply.statusCode);

@@ -39,7 +39,7 @@ export async function publishMessage(
     messageGroupId?: string;
     deduplicationId?: string;
     messageAttributes?: Record<string, MessageAttributeValue>;
-  }
+  },
 ): Promise<string> {
   const input: PublishCommandInput = {
     TopicArn: topicArn,
@@ -67,7 +67,7 @@ export async function publishEvent(
   topicArn: string,
   eventType: EventType,
   data: Record<string, unknown>,
-  correlationId?: string
+  correlationId?: string,
 ): Promise<string> {
   const event = {
     id: crypto.randomUUID(),
@@ -96,18 +96,23 @@ export async function publishOrderEvent(
   orderId: string,
   customerId: string,
   additionalData?: Record<string, unknown>,
-  correlationId?: string
+  correlationId?: string,
 ): Promise<string> {
   const topicArn = config.SNS_ORDER_TOPIC_ARN;
   if (!topicArn) {
     throw new Error('SNS_ORDER_TOPIC_ARN not configured');
   }
 
-  return publishEvent(topicArn, eventType, {
-    orderId,
-    customerId,
-    ...additionalData,
-  }, correlationId);
+  return publishEvent(
+    topicArn,
+    eventType,
+    {
+      orderId,
+      customerId,
+      ...additionalData,
+    },
+    correlationId,
+  );
 }
 
 // Publish notification event
@@ -121,7 +126,7 @@ export async function publishNotification(
     subject?: string;
     templateId?: string;
     templateData?: Record<string, unknown>;
-  }
+  },
 ): Promise<string> {
   const topicArn = config.SNS_NOTIFICATION_TOPIC_ARN;
   if (!topicArn) {

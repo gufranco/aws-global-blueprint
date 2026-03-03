@@ -56,7 +56,7 @@ export const dynamoDb = DynamoDBDocumentClient.from(dynamoClient, {
 // Get item by key
 export async function getItem<T>(
   tableName: string,
-  key: Record<string, unknown>
+  key: Record<string, unknown>,
 ): Promise<T | null> {
   const input: GetCommandInput = {
     TableName: tableName,
@@ -79,7 +79,7 @@ export async function putItem<T extends Record<string, unknown>>(
     conditionExpression?: string;
     expressionAttributeNames?: Record<string, string>;
     expressionAttributeValues?: Record<string, unknown>;
-  }
+  },
 ): Promise<void> {
   const input: PutCommandInput = {
     TableName: tableName,
@@ -107,7 +107,7 @@ export async function updateItem<T>(
     conditionAttributeNames?: Record<string, string>;
     conditionAttributeValues?: Record<string, unknown>;
     returnValues?: 'NONE' | 'ALL_OLD' | 'UPDATED_OLD' | 'ALL_NEW' | 'UPDATED_NEW';
-  }
+  },
 ): Promise<T | null> {
   // Build update expression
   const updateExpressionParts: string[] = [];
@@ -156,7 +156,7 @@ export async function deleteItem(
   key: Record<string, unknown>,
   options?: {
     conditionExpression?: string;
-  }
+  },
 ): Promise<void> {
   const input: DeleteCommandInput = {
     TableName: tableName,
@@ -184,7 +184,7 @@ export async function queryItems<T>(
     limit?: number;
     scanIndexForward?: boolean;
     exclusiveStartKey?: Record<string, unknown>;
-  }
+  },
 ): Promise<{ items: T[]; lastKey?: Record<string, unknown> }> {
   const input: QueryCommandInput = {
     TableName: tableName,
@@ -290,7 +290,7 @@ export async function scanItems<T>(
     expressionAttributeValues?: Record<string, unknown>;
     limit?: number;
     exclusiveStartKey?: Record<string, unknown>;
-  }
+  },
 ): Promise<{ items: T[]; lastKey?: Record<string, unknown> }> {
   const input: ScanCommandInput = {
     TableName: tableName,

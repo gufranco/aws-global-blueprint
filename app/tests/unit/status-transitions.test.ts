@@ -3,11 +3,7 @@
 // =============================================================================
 
 import { describe, it, expect } from 'vitest';
-import {
-  OrderStatus,
-  ORDER_STATUS_TRANSITIONS,
-  isValidStatusTransition,
-} from '@blueprint/shared';
+import { OrderStatus, ORDER_STATUS_TRANSITIONS, isValidStatusTransition } from '@blueprint/shared';
 
 type OrderStatusValue = (typeof OrderStatus)[keyof typeof OrderStatus];
 

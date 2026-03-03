@@ -85,7 +85,7 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
       });
 
       return reply.status(201).send(order);
-    }
+    },
   );
 
   // Get order by ID
@@ -136,11 +136,13 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const order = await orderService.getOrder(request.params.id);
       return reply.send(order);
-    }
+    },
   );
 
   // List orders (cursor-based pagination)
-  app.get<{ Querystring: { cursor?: string; limit?: number; customerId?: string; status?: string } }>(
+  app.get<{
+    Querystring: { cursor?: string; limit?: number; customerId?: string; status?: string };
+  }>(
     '/',
     {
       schema: {
@@ -183,7 +185,7 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
 
       const result = await orderService.listOrders(pagination, filters);
       return reply.send(result);
-    }
+    },
   );
 
   // Update order status
@@ -225,10 +227,10 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
     async (request, reply) => {
       const order = await orderService.updateOrderStatus(
         request.params.id,
-        request.body.status as Order['status']
+        request.body.status as Order['status'],
       );
       return reply.send(order);
-    }
+    },
   );
 
   // Cancel order
@@ -264,6 +266,6 @@ export async function orderRoutes(app: FastifyInstance): Promise<void> {
         status: order.status,
         message: 'Order cancelled successfully',
       });
-    }
+    },
   );
 }

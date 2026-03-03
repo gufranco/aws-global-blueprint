@@ -25,7 +25,7 @@ const defaultOptions: CircuitBreakerOptions = {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function createCircuitBreaker(
   fn: (...args: unknown[]) => Promise<unknown>,
-  options: CircuitBreakerOptions = {}
+  options: CircuitBreakerOptions = {},
 ): CircuitBreaker {
   const opts = { ...defaultOptions, ...options };
   const name = opts.name ?? fn.name ?? 'unnamed';

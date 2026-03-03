@@ -35,7 +35,11 @@ const logger = createLogger('orders');
 const snsBreaker = createCircuitBreaker(
   async (...args: unknown[]) => {
     const [eventType, orderId, customerId, additionalData, correlationId] = args as [
-      string, string, string, Record<string, unknown> | undefined, string | undefined
+      string,
+      string,
+      string,
+      Record<string, unknown> | undefined,
+      string | undefined,
     ];
     return publishOrderEvent(
       eventType as 'order.created',
@@ -45,7 +49,7 @@ const snsBreaker = createCircuitBreaker(
       correlationId,
     );
   },
-  { name: 'sns-order-events', timeout: 5000, errorThresholdPercentage: 50, resetTimeout: 15000 }
+  { name: 'sns-order-events', timeout: 5000, errorThresholdPercentage: 50, resetTimeout: 15000 },
 );
 
 snsBreaker.fallback(() => {
@@ -81,7 +85,10 @@ class OrderService {
         sk: `${IDEMPOTENCY_KEY_PREFIX}${idempotencyKey}`,
       });
       if (existing) {
-        logger.info({ idempotencyKey, orderId: existing.orderId }, 'Returning existing order for idempotency key');
+        logger.info(
+          { idempotencyKey, orderId: existing.orderId },
+          'Returning existing order for idempotency key',
+        );
         return this.getOrder(existing.orderId);
       }
     }
@@ -194,25 +201,25 @@ class OrderService {
 
     // Best-effort publish via circuit breaker. If SNS is degraded, the outbox handles delivery.
     try {
-      const messageId = await snsBreaker.fire(
+      const messageId = (await snsBreaker.fire(
         'order.created',
         orderId,
         input.customerId,
         { totalAmount, itemCount: input.items.length },
-        correlationId
-      ) as string;
+        correlationId,
+      )) as string;
 
       if (messageId !== 'fallback-outbox') {
         await updateItem(
           ORDERS_TABLE,
           { pk: `${OUTBOX_KEY_PREFIX}${eventId}`, sk: `${OUTBOX_KEY_PREFIX}${eventId}` },
-          { publishedAt: now.toISOString() }
+          { publishedAt: now.toISOString() },
         );
       }
     } catch (error) {
       logger.warn(
         { error, orderId, eventId },
-        'Failed to publish order.created event, outbox will retry'
+        'Failed to publish order.created event, outbox will retry',
       );
     }
 
@@ -243,7 +250,7 @@ class OrderService {
 
   async listOrders(
     pagination: CursorPaginationInput,
-    filters?: { customerId?: string; status?: string }
+    filters?: { customerId?: string; status?: string },
   ): Promise<CursorPaginatedResult<Order>> {
     const { cursor, limit } = pagination;
 
@@ -268,7 +275,7 @@ class OrderService {
           indexName: 'CustomerOrders',
           limit,
           exclusiveStartKey,
-        }
+        },
       );
     } else if (filters?.status) {
       result = await queryItems<Order>(
@@ -280,7 +287,7 @@ class OrderService {
           expressionAttributeNames: { '#status': 'status' },
           limit,
           exclusiveStartKey,
-        }
+        },
       );
     } else {
       // Query the AllOrders GSI using the synthetic entityType partition key.
@@ -295,7 +302,7 @@ class OrderService {
           limit,
           exclusiveStartKey,
           scanIndexForward: false,
-        }
+        },
       );
     }
 
@@ -322,7 +329,7 @@ class OrderService {
     if (!allowedTransitions?.includes(newStatus)) {
       throw new ValidationError(
         `Invalid status transition from '${currentStatus}' to '${newStatus}'`,
-        { currentStatus, newStatus, allowedTransitions }
+        { currentStatus, newStatus, allowedTransitions },
       );
     }
 
@@ -400,25 +407,25 @@ class OrderService {
 
     // Best-effort publish via circuit breaker. Outbox handles delivery if this fails.
     try {
-      const messageId = await snsBreaker.fire(
+      const messageId = (await snsBreaker.fire(
         `order.${newStatus}`,
         orderId,
         order.customerId,
         { previousStatus: currentStatus, status: newStatus },
-        undefined
-      ) as string;
+        undefined,
+      )) as string;
 
       if (messageId !== 'fallback-outbox') {
         await updateItem(
           ORDERS_TABLE,
           { pk: `${OUTBOX_KEY_PREFIX}${eventId}`, sk: `${OUTBOX_KEY_PREFIX}${eventId}` },
-          { publishedAt: now.toISOString() }
+          { publishedAt: now.toISOString() },
         );
       }
     } catch (error) {
       logger.warn(
         { error, orderId, eventId },
-        `Failed to publish order.${newStatus} event, outbox will retry`
+        `Failed to publish order.${newStatus} event, outbox will retry`,
       );
     }
 

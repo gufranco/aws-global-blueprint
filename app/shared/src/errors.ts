@@ -7,7 +7,7 @@ export class AppError extends Error {
     message: string,
     public readonly code: string,
     public readonly statusCode: number = 500,
-    public readonly details?: Record<string, unknown>
+    public readonly details?: Record<string, unknown>,
   ) {
     super(message);
     this.name = 'AppError';
@@ -38,7 +38,7 @@ export class NotFoundError extends AppError {
       id ? `${resource} with id '${id}' not found` : `${resource} not found`,
       'NOT_FOUND',
       404,
-      { resource, id }
+      { resource, id },
     );
     this.name = 'NotFoundError';
   }
@@ -67,11 +67,7 @@ export class ConflictError extends AppError {
 
 export class ReadOnlyError extends AppError {
   constructor() {
-    super(
-      'Write operations are not allowed in read-only replica regions',
-      'READ_ONLY_REGION',
-      403
-    );
+    super('Write operations are not allowed in read-only replica regions', 'READ_ONLY_REGION', 403);
     this.name = 'ReadOnlyError';
   }
 }

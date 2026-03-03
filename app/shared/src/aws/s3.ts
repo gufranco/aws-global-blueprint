@@ -69,7 +69,7 @@ export async function putObject(
     contentType?: string;
     metadata?: Record<string, string>;
     cacheControl?: string;
-  }
+  },
 ): Promise<void> {
   const input: PutObjectCommandInput = {
     Bucket: bucket,
@@ -122,7 +122,7 @@ export async function listObjects(
   options?: {
     maxKeys?: number;
     continuationToken?: string;
-  }
+  },
 ): Promise<{ keys: string[]; nextToken?: string }> {
   const command = new ListObjectsV2Command({
     Bucket: bucket,
@@ -149,7 +149,7 @@ export async function getUploadUrl(
   options?: {
     expiresIn?: number;
     contentType?: string;
-  }
+  },
 ): Promise<string> {
   const command = new PutObjectCommand({
     Bucket: bucket,
@@ -168,7 +168,7 @@ export async function getDownloadUrl(
   key: string,
   options?: {
     expiresIn?: number;
-  }
+  },
 ): Promise<string> {
   const command = new GetObjectCommand({
     Bucket: bucket,

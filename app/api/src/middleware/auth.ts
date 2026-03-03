@@ -15,10 +15,7 @@ function constantTimeCompare(a: string, b: string): boolean {
   return timingSafeEqual(Buffer.from(a), Buffer.from(b));
 }
 
-export async function authMiddleware(
-  request: FastifyRequest,
-  _reply: FastifyReply
-): Promise<void> {
+export async function authMiddleware(request: FastifyRequest, _reply: FastifyReply): Promise<void> {
   const shouldSkip = SKIP_AUTH_PREFIXES.some((prefix) => request.url.startsWith(prefix));
   if (shouldSkip) {
     return;

@@ -79,7 +79,10 @@ export async function sweepOutboxEvents(): Promise<number> {
       logger.info({ eventId: item.eventId, eventType: item.eventType }, 'Outbox event published');
     } catch (error) {
       if (isTransient(error)) {
-        logger.warn({ error, eventId: item.eventId }, 'Transient failure publishing outbox event, will retry next sweep');
+        logger.warn(
+          { error, eventId: item.eventId },
+          'Transient failure publishing outbox event, will retry next sweep',
+        );
       } else {
         logger.error({ error, eventId: item.eventId }, 'Permanent failure publishing outbox event');
       }

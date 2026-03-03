@@ -40,10 +40,7 @@ export async function processOrderMessage(message: Message): Promise<void> {
   // Validate event
   const parseResult = orderEventSchema.safeParse(eventData);
   if (!parseResult.success) {
-    logger.error(
-      { errors: parseResult.error.errors, event: eventData },
-      'Invalid order event'
-    );
+    logger.error({ errors: parseResult.error.errors, event: eventData }, 'Invalid order event');
     throw new Error('Invalid order event format');
   }
 
@@ -54,7 +51,7 @@ export async function processOrderMessage(message: Message): Promise<void> {
   if (majorVersion !== CURRENT_SCHEMA_VERSION.split('.')[0]) {
     logger.error(
       { schemaVersion: event.schemaVersion, expected: CURRENT_SCHEMA_VERSION },
-      'Incompatible event schema version, skipping'
+      'Incompatible event schema version, skipping',
     );
     return;
   }
@@ -66,7 +63,7 @@ export async function processOrderMessage(message: Message): Promise<void> {
       orderId: event.data.orderId,
       customerId: event.data.customerId,
     },
-    'Processing order event'
+    'Processing order event',
   );
 
   // Handle different event types
@@ -115,7 +112,7 @@ async function handleOrderCreated(event: OrderEvent): Promise<void> {
         subject: 'Order Confirmation',
         templateId: 'order-confirmation',
         templateData: { orderId },
-      }
+      },
     );
   } catch (error) {
     if (isTransient(error)) {
@@ -152,7 +149,7 @@ async function handleOrderProcessing(event: OrderEvent): Promise<void> {
         subject: 'Order Update - Processing',
         templateId: 'order-processing',
         templateData: { orderId },
-      }
+      },
     );
   } catch (error) {
     if (isTransient(error)) {
@@ -181,7 +178,7 @@ async function handleOrderShipped(event: OrderEvent): Promise<void> {
           orderId,
           trackingUrl: `https://example.com/track/${orderId}`,
         },
-      }
+      },
     );
   } catch (error) {
     if (isTransient(error)) {
@@ -210,7 +207,7 @@ async function handleOrderDelivered(event: OrderEvent): Promise<void> {
           orderId,
           feedbackUrl: `https://example.com/feedback/${orderId}`,
         },
-      }
+      },
     );
   } catch (error) {
     if (isTransient(error)) {
@@ -236,7 +233,7 @@ async function handleOrderCancelled(event: OrderEvent): Promise<void> {
         subject: 'Order Cancelled',
         templateId: 'order-cancelled',
         templateData: { orderId },
-      }
+      },
     );
   } catch (error) {
     if (isTransient(error)) {
