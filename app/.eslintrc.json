@@ -15,7 +15,12 @@
   "parserOptions": {
     "ecmaVersion": 2022,
     "sourceType": "module",
-    "project": ["./shared/tsconfig.json", "./api/tsconfig.json", "./worker/tsconfig.json"]
+    "project": [
+      "./shared/tsconfig.json",
+      "./api/tsconfig.json",
+      "./worker/tsconfig.json",
+      "./tsconfig.test.json"
+    ]
   },
   "rules": {
     "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
