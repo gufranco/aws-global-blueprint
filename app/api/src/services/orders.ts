@@ -78,6 +78,10 @@ class OrderService {
   async createOrder(input: CreateOrderInput, options?: CreateOrderOptions): Promise<Order> {
     const { idempotencyKey, correlationId } = options ?? {};
 
+    if (idempotencyKey && idempotencyKey.length > 256) {
+      throw new ValidationError('Idempotency key must be 256 characters or fewer');
+    }
+
     // Check idempotency: if the same key was used before, return the existing order
     if (idempotencyKey) {
       const existing = await getItem<{ orderId: string }>(ORDERS_TABLE, {
@@ -336,8 +340,8 @@ class OrderService {
     const now = new Date();
     const eventId = crypto.randomUUID();
 
-    // Atomic write: status update + outbox event. If SNS is degraded, the outbox
-    // guarantees eventual delivery without reverting a valid business state change.
+    // Atomic write: status update + outbox event + audit history.
+    // All three succeed or fail together.
     const transactItems: TransactWriteItem[] = [
       {
         update: {
@@ -373,6 +377,20 @@ class OrderService {
           },
         },
       },
+      {
+        put: {
+          tableName: ORDERS_TABLE,
+          item: {
+            pk: `${HISTORY_KEY_PREFIX}${orderId}`,
+            sk: `${HISTORY_KEY_PREFIX}${now.toISOString()}`,
+            orderId,
+            previousStatus: currentStatus,
+            newStatus,
+            changedAt: now.toISOString(),
+            ttl: Math.floor(now.getTime() / 1000) + 90 * 86400,
+          },
+        },
+      },
     ];
 
     try {
@@ -386,19 +404,6 @@ class OrderService {
       }
       throw error;
     }
-
-    // Record status change in history for audit trail (best-effort)
-    await putItem(ORDERS_TABLE, {
-      pk: `${HISTORY_KEY_PREFIX}${orderId}`,
-      sk: `${HISTORY_KEY_PREFIX}${now.toISOString()}`,
-      orderId,
-      previousStatus: currentStatus,
-      newStatus,
-      changedAt: now.toISOString(),
-      ttl: Math.floor(now.getTime() / 1000) + 90 * 86400,
-    }).catch((err) => {
-      logger.warn({ err, orderId }, 'Failed to record status history');
-    });
 
     // Invalidate cache so next read fetches fresh state
     await cacheDelete(`${CACHE_PREFIX}${orderId}`);
