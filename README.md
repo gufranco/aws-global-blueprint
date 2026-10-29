@@ -7,12 +7,8 @@
 <br>
 <br>
 
-[![CI](https://github.com/gufranco/aws-global-blueprint/actions/workflows/ci.yml/badge.svg)](https://github.com/gufranco/aws-global-blueprint/actions/workflows/ci.yml)
-[![Terraform](https://img.shields.io/badge/Terraform-%3E%3D1.5-844FBA?logo=terraform&logoColor=white)](#prerequisites)
-[![OpenTofu](https://img.shields.io/badge/OpenTofu-%3E%3D1.6-FFDA18?logo=opentofu&logoColor=black)](#prerequisites)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?logo=typescript&logoColor=white)](#tech-stack)
-[![Node.js](https://img.shields.io/badge/Node.js-24-339933?logo=nodedotjs&logoColor=white)](#prerequisites)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![ci](https://img.shields.io/github/actions/workflow/status/gufranco/aws-global-blueprint/ci.yml?branch=main&style=flat-square&label=ci)](https://github.com/gufranco/aws-global-blueprint/actions/workflows/ci.yml)
+[![license](https://img.shields.io/github/license/gufranco/aws-global-blueprint?style=flat-square&label=license)](LICENSE)
 
 </div>
 
