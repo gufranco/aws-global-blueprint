@@ -252,7 +252,7 @@ class OrderService {
     // Populate cache for subsequent reads
     await cacheSet(`${CACHE_PREFIX}${orderId}`, order, CACHE_TTL_SECONDS);
 
-    return order as Order;
+    return order;
   }
 
   async listOrders(
