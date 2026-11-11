@@ -6,7 +6,7 @@
 # =============================================================================
 
 # Stage 1: Build
-FROM node:24-alpine AS builder
+FROM node:26-alpine AS builder
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
@@ -30,7 +30,7 @@ RUN cd shared && pnpm build
 RUN cd worker && pnpm build
 
 # Stage 2: Production
-FROM node:24-alpine AS production
+FROM node:26-alpine AS production
 
 # Install tini for proper PID 1 signal handling
 RUN apk add --no-cache tini
