@@ -24,19 +24,19 @@
     "format:check": "prettier --check ."
   },
   "devDependencies": {
-    "@commitlint/cli": "^20.5.0",
-    "@commitlint/config-conventional": "^20.5.0",
-    "@faker-js/faker": "^10.3.0",
-    "@types/node": "^25.5.0",
-    "@vitest/coverage-v8": "^4.1.0",
-    "eslint": "^10.1.0",
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "@faker-js/faker": "^10.6.0",
+    "@types/node": "^25.9.9",
+    "@vitest/coverage-v8": "^5.1.0",
+    "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
     "lint-staged": "^16.4.0",
-    "prettier": "^3.8.1",
+    "prettier": "^3.10.0",
     "typescript": "^5.9.3",
-    "typescript-eslint": "^8.57.1",
-    "vitest": "^4.1.0"
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^5.1.0"
   },
   "engines": {
     "node": ">=24.0.0",
