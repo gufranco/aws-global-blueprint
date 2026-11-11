@@ -47,7 +47,7 @@ services:
       - blueprint
 
   redis:
-    image: redis:7-alpine
+    image: redis:8-alpine
     container_name: blueprint-redis
     command: redis-server --appendonly yes
     ports:
