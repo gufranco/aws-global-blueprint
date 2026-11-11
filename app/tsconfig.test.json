@@ -15,6 +15,6 @@
       "@blueprint/shared": ["./shared/src/index.ts"]
     }
   },
-  "include": ["tests/**/*", "vitest.config.ts"],
+  "include": ["tests/**/*", "vitest.config.mts"],
   "exclude": ["node_modules"]
 }
