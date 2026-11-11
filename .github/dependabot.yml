@@ -1,0 +1,66 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns:
+          - "*"
+
+  - package-ecosystem: npm
+    directories:
+      - /app
+      - /tests
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+    groups:
+      npm:
+        patterns:
+          - "*"
+
+  - package-ecosystem: docker
+    directories:
+      - /app/api
+      - /app/worker
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+
+  - package-ecosystem: docker-compose
+    directory: /localstack
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+
+  - package-ecosystem: gomod
+    directory: /tests/terraform
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+    groups:
+      go:
+        patterns:
+          - "*"
+
+  - package-ecosystem: terraform
+    directories:
+      - /
+      - /environments/*
+      - /modules/*
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build
+    groups:
+      terraform:
+        patterns:
+          - "*"
