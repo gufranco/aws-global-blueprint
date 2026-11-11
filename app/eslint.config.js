@@ -11,7 +11,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['tests/unit/*.test.ts', 'vitest.config.ts'],
+          allowDefaultProject: ['tests/unit/*.test.ts', 'vitest.config.mts'],
           defaultProject: 'tsconfig.test.json',
         },
         tsconfigRootDir: import.meta.dirname,
