@@ -2,7 +2,7 @@
 // Redis Cache Client
 // =============================================================================
 
-import Redis, { type RedisOptions } from 'ioredis';
+import Redis from 'ioredis';
 import { config } from '../config/index.js';
 import { createLogger } from '../logger.js';
 
@@ -13,7 +13,7 @@ let redisClient: Redis | null = null;
 export function getRedisClient(): Redis {
   if (redisClient) return redisClient;
 
-  const options: RedisOptions = {
+  redisClient = new Redis({
     host: config.REDIS_HOST,
     port: config.REDIS_PORT,
     maxRetriesPerRequest: 3,
@@ -22,13 +22,8 @@ export function getRedisClient(): Redis {
       return Math.min(times * 200, 2000);
     },
     lazyConnect: true,
-  };
-
-  if (config.REDIS_PASSWORD) {
-    options.password = config.REDIS_PASSWORD;
-  }
-
-  redisClient = new Redis(options);
+    ...(config.REDIS_PASSWORD ? { password: config.REDIS_PASSWORD } : {}),
+  });
 
   redisClient.on('error', (err) => {
     logger.warn({ err }, 'Redis connection error');
