@@ -558,7 +558,7 @@ The blueprint creates its own VPCs with non-overlapping CIDR blocks. To integrat
 | Category | Technology |
 |:---------|:-----------|
 | IaC | Terraform >= 1.5 / OpenTofu >= 1.6 |
-| Runtime | Node.js 24 |
+| Runtime | Node.js 26 |
 | Language | TypeScript 5.9 (strict mode, noUncheckedIndexedAccess) |
 | Framework | Fastify 5 with Helmet, CORS, Rate Limiting |
 | Validation | Zod 4 with input and output schemas |

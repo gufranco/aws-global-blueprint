@@ -6,10 +6,12 @@
 # =============================================================================
 
 # Stage 1: Build
-FROM node:24-alpine AS builder
+FROM ghcr.io/pnpm/pnpm:12.18.0-alpine AS pnpm
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+FROM node:26-alpine AS builder
+
+COPY --from=pnpm /opt/pnpm /opt/pnpm
+RUN for bin in pnpm pn pnpx pnx; do ln -s "/opt/pnpm/$bin" "/usr/local/bin/$bin"; done
 
 WORKDIR /app
 
@@ -26,17 +28,13 @@ COPY shared ./shared
 COPY worker ./worker
 
 # Build shared library first, then Worker
-RUN cd shared && pnpm build
-RUN cd worker && pnpm build
+RUN pnpm --dir shared build && pnpm --dir worker build
 
 # Stage 2: Production
-FROM node:24-alpine AS production
+FROM node:26-alpine AS production
 
 # Install tini for proper PID 1 signal handling
-RUN apk add --no-cache tini
-
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@8.15.0 --activate
+RUN apk add --no-cache tini=0.19.0-r3
 
 # Add non-root user for security
 RUN addgroup -g 1001 -S nodejs && \
@@ -63,14 +61,14 @@ COPY --from=builder /app/worker/node_modules ./worker/node_modules
 RUN chown -R nodejs:nodejs /app
 
 # Switch to non-root user
-USER nodejs
+USER 1001:1001
 
 # Set environment
 ENV NODE_ENV=production
 
 # Health check: verify the worker process is running
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD node -e "process.exit(0)" || exit 1
+  CMD ["node", "-e", "process.exit(0)"]
 
 # Use tini as PID 1 for proper signal forwarding
 ENTRYPOINT ["/sbin/tini", "--"]
