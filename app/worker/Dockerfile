@@ -6,7 +6,7 @@
 # =============================================================================
 
 # Stage 1: Build
-FROM ghcr.io/pnpm/pnpm:12.18.0-alpine AS pnpm
+FROM ghcr.io/pnpm/pnpm:12.20.0-alpine AS pnpm
 
 FROM node:26-alpine AS builder
 
