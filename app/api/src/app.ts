@@ -2,7 +2,7 @@
 // Fastify Application
 // =============================================================================
 
-import Fastify, { type FastifyInstance } from 'fastify';
+import Fastify, { LogController, type FastifyInstance } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -31,7 +31,7 @@ export async function buildApp(): Promise<FastifyInstance> {
     },
     trustProxy: true,
     requestIdHeader: 'x-request-id',
-    requestIdLogLabel: 'requestId',
+    logController: new LogController({ requestIdLogLabel: 'requestId' }),
   });
 
   // ==========================================================================
