@@ -72,7 +72,7 @@ EXPOSE 3000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD ["/bin/sh", "-c", "wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1"]
+  CMD ["/bin/sh", "-c", "wget --no-verbose --tries=1 --spider http://127.0.0.1:3000/health || exit 1"]
 
 # Use tini as PID 1 for proper signal forwarding
 ENTRYPOINT ["/sbin/tini", "--"]
